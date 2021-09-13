@@ -1,0 +1,17 @@
+== building
+
+[source]
+----
+wasm-pack build --target web
+
+rollup ./main.js --format iife --file ./pkg/bundle.js
+----
+
+== serving
+
+[source]
+----
+miniserve -p 8080 .
+----
+
+then browse http://localhost:8080/index.html
