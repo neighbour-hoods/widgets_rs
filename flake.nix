@@ -30,6 +30,7 @@
                 targets = [ wasmTarget ];
               })
               miniserve
+              nodejs
               nodePackages.rollup
               wasm-pack
             ];
