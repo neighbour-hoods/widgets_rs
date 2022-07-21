@@ -1,12 +1,15 @@
 use yew::prelude::*;
+use crate::myclass::MyClass;
 
 pub enum Msg {
     AddOne,
     SubOne,
+    SetNumber(u32),
 }
 
 pub struct Model {
     value: i64,
+    myclass: MyClass,
 }
 
 impl Component for Model {
@@ -16,6 +19,7 @@ impl Component for Model {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             value: 0,
+            myclass: MyClass::new(),
         }
     }
 
@@ -33,6 +37,10 @@ impl Component for Model {
                 // re-render for it to appear on the page
                 true
             }
+            Msg::SetNumber(n) => {
+                self.myclass.set_number(n);
+                true
+            }
         }
     }
 
@@ -42,6 +50,9 @@ impl Component for Model {
                 <button onclick={ctx.link().callback(|_| Msg::AddOne)}>{ "+1" }</button>
                 <button onclick={ctx.link().callback(|_| Msg::SubOne)}>{ "-1" }</button>
                 <p>{ self.value }</p>
+                <br/>
+                <button onclick={ctx.link().callback(|_| Msg::SetNumber(0))}>{ "set number" }</button>
+                <p>{self.myclass.render()}</p>
             </div>
         }
     }
