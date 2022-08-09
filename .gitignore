@@ -3,3 +3,5 @@ pkg/
 node_modules/
 
 .direnv/
+
+src/holochain_client_wrapper.js
