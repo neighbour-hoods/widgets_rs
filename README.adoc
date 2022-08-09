@@ -15,3 +15,10 @@ miniserve -p 8080 .
 ----
 
 then browse http://localhost:8080/index.html
+
+== building JS / blob-ifying it
+
+[source]
+----
+npm install ./submodules/holochain-client-js
+----

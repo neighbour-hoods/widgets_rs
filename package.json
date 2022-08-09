@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@holochain/client": "file:submodules/holochain-client-js",
     "esbuild": "^0.14.54"
   }
 }
