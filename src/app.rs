@@ -1,5 +1,8 @@
 use yew::prelude::*;
-use crate::myclass::MyClass;
+use crate::{
+    myclass::MyClass,
+    holochain_client_wrapper::AdminWebsocket,
+};
 
 pub enum Msg {
     AddOne,
@@ -10,6 +13,7 @@ pub enum Msg {
 pub struct Model {
     value: i64,
     myclass: MyClass,
+    admin_ws: AdminWebsocket,
 }
 
 impl Component for Model {
@@ -20,6 +24,7 @@ impl Component for Model {
         Self {
             value: 0,
             myclass: MyClass::new(),
+            admin_ws: AdminWebsocket::connect("localhost:9999".into(), None),
         }
     }
 
