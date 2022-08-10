@@ -32,7 +32,7 @@ impl Component for Model {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
-            match connect_wrapper("ws://localhost:9999".into(), None).await {
+            match connect_wrapper("ws://localhost:9000".into(), None).await {
                 Ok(ws) => Msg::AdminWsConnected(ws),
                 Err(err) => Msg::AdminWsError(err),
             }
