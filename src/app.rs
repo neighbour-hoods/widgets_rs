@@ -31,7 +31,7 @@ impl Component for Model {
         ctx.link().send_future(async {
             match connect_wrapper("localhost:9999".into(), None).await {
                 Ok(ws) => Msg::AdminWsConnected(ws),
-                Err(err) => Msg::AdminWsError(format!("{:?}", err)),
+                Err(err) => Msg::AdminWsError(err),
             }
         });
         Self {
