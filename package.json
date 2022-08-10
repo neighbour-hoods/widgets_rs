@@ -6,6 +6,7 @@
   "scripts": {
     "setup": "npm install && npm install ./submodules/holochain-client-js",
     "serve": "miniserve -p 8080 .",
-    "fe:build": "wasm-pack build --target web && rollup ./main.js --format iife --file ./pkg/bundle.js"
+    "fe:build": "wasm-pack build --target web && rollup ./main.js --format iife --file ./pkg/bundle.js",
+    "fe:hc-js-build": "node esbuild.config.js"
   }
 }

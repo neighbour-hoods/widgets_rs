@@ -22,5 +22,5 @@ then browse http://localhost:8080/index.html
 ----
 npm install ./submodules/holochain-client-js
 
-./node_modules/.bin/esbuild ./submodules/holochain-client-js/src/index.ts --format=esm --bundle --outfile=src/holochain_client_wrapper.js
+npm run fe:hc-js-build
 ----
