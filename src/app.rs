@@ -12,9 +12,20 @@ pub enum Msg {
     SetNumber(u32),
     AdminWsConnected(AdminWebsocket),
     AdminWsError(String),
+    AdminWsCmd(AdminWsCmd),
+    AdminWsCmdResponse(AdminWsCmdResponse),
 }
 
-#[derive(Debug)]
+pub enum AdminWsCmd {
+    ActivateApp,
+}
+
+pub enum AdminWsCmdResponse {
+    Success,
+    Error(String),
+}
+
+#[derive(Clone, Debug)]
 pub enum AdminWsState {
     Present(AdminWebsocket),
     Absent(String),
@@ -44,7 +55,7 @@ impl Component for Model {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::AddOne => {
                 self.value += 1;
@@ -72,6 +83,30 @@ impl Component for Model {
                 console_error!(err);
                 true
             }
+            Msg::AdminWsCmd(AdminWsCmd::ActivateApp) => {
+                let ws_clone = self.admin_ws.clone();
+                match ws_clone {
+                    AdminWsState::Absent(_err) => console_log!("activateApp but no admin ws"),
+                    AdminWsState::Present(ws) => {
+                        ctx.link().send_future(async move {
+                            match ws.activate_app("foobar".into()).await {
+                                Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
+                                Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(err)),
+                            }
+                        });
+                    }
+                };
+                false
+            }
+            Msg::AdminWsCmdResponse(resp) => {
+                match resp {
+                    AdminWsCmdResponse::Success => {}
+                    AdminWsCmdResponse::Error(err) => {
+                        console_error!("AdminWsCmdResponse: error: {}", err);
+                    }
+                };
+                false
+            }
         }
     }
 
@@ -86,6 +121,8 @@ impl Component for Model {
                 <p>{self.myclass.render()}</p>
 
                 <p>{format!("{:?}", self.admin_ws)}</p>
+
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::ActivateApp))}>{ "activateApp" }</button>
             </div>
         }
     }
