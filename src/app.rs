@@ -3,7 +3,7 @@ use yew::prelude::*;
 
 use crate::{
     myclass::MyClass,
-    holochain_client_wrapper::{AdminWebsocket, connect_wrapper},
+    holochain_client_wrapper::{AdminWebsocket, connect},
 };
 
 pub enum Msg {
@@ -32,7 +32,7 @@ impl Component for Model {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
-            match connect_wrapper("ws://localhost:9000".into(), None).await {
+            match connect("ws://localhost:9000".into(), None).await {
                 Ok(ws) => Msg::AdminWsConnected(ws),
                 Err(err) => Msg::AdminWsError(err),
             }
