@@ -63,8 +63,8 @@ impl Component for Model {
                 true
             }
             Msg::AdminWsConnected(ws) => {
-                self.admin_ws = AdminWsState::Present(ws);
-                console_log!("Holochain admin ws connected");
+                self.admin_ws = AdminWsState::Present(ws.clone());
+                console_log!("Holochain admin ws connected: {:?}", ws);
                 true
             }
             Msg::AdminWsError(err) => {
