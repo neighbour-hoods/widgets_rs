@@ -1,4 +1,6 @@
+use weblog::{console_error, console_log};
 use yew::prelude::*;
+
 use crate::{
     myclass::MyClass,
     holochain_client_wrapper::{AdminWebsocket, connect_wrapper},
@@ -12,6 +14,7 @@ pub enum Msg {
     AdminWsError(String),
 }
 
+#[derive(Debug)]
 pub enum AdminWsState {
     Present(AdminWebsocket),
     Absent(String),
@@ -29,7 +32,7 @@ impl Component for Model {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
-            match connect_wrapper("localhost:9999".into(), None).await {
+            match connect_wrapper("ws://localhost:9999".into(), None).await {
                 Ok(ws) => Msg::AdminWsConnected(ws),
                 Err(err) => Msg::AdminWsError(err),
             }
@@ -61,10 +64,12 @@ impl Component for Model {
             }
             Msg::AdminWsConnected(ws) => {
                 self.admin_ws = AdminWsState::Present(ws);
+                console_log!("Holochain admin ws connected");
                 true
             }
             Msg::AdminWsError(err) => {
-                self.admin_ws = AdminWsState::Absent(err);
+                self.admin_ws = AdminWsState::Absent(err.clone());
+                console_error!(err);
                 true
             }
         }
@@ -79,6 +84,8 @@ impl Component for Model {
                 <br/>
                 <button onclick={ctx.link().callback(|_| Msg::SetNumber(0))}>{ "set number" }</button>
                 <p>{self.myclass.render()}</p>
+
+                <p>{format!("{:?}", self.admin_ws)}</p>
             </div>
         }
     }
