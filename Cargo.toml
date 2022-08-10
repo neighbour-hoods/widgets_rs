@@ -7,5 +7,7 @@ edition = "2018"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-yew = "0.19.3"
+js-sys = "0.3.59"
 wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4.32"
+yew = "0.19.3"
