@@ -1,4 +1,4 @@
-use js_sys::{Function, Promise, Reflect};
+use js_sys::{Function, Object, Promise, Reflect};
 use wasm_bindgen::{prelude::*, JsCast};
 use wasm_bindgen_futures::JsFuture;
 
@@ -15,15 +15,30 @@ impl From<AdminWebsocket> for JsValue {
 
 impl AdminWebsocket {
     pub async fn enable_app(&self, installed_app_id: String) -> Result<(), JsValue> {
-        let method: Function =
-            Reflect::get(&self.js_ws, &JsValue::from_str("enableApp"))?.dyn_into()?;
-        let promise: Promise = method
-            .call1(&self.js_ws, &installed_app_id.into())?
-            .dyn_into()?;
+        let tag: &str = "enableApp";
+        let method: Function = Reflect::get(&self.js_ws, &JsValue::from_str(&tag))?.dyn_into()?;
+        let payload: JsValue = mk_tagged_obj(tag, "installed_app_id", installed_app_id.into())?;
+        let promise: Promise = method.call1(&self.js_ws, &payload)?.dyn_into()?;
         let future: JsFuture = promise.into();
         future.await?;
         Ok(())
     }
+}
+
+/// `tag` is more like "method name" here.
+fn mk_tagged_obj(tag: &str, payload_key: &str, payload: JsValue) -> Result<JsValue, JsValue> {
+    let target: JsValue = Object::new().dyn_into()?;
+    assert!(Reflect::set(
+        &target,
+        &JsValue::from_str("tag"),
+        &JsValue::from_str(tag)
+    )?);
+    assert!(Reflect::set(
+        &target,
+        &JsValue::from_str(payload_key),
+        &payload
+    )?);
+    Ok(target)
 }
 
 #[wasm_bindgen(module = "/src/holochain_client_wrapper.js")]
