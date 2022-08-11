@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct AdminWebsocket {
-    js_ws: JsValue
+    js_ws: JsValue,
 }
 
 impl From<AdminWebsocket> for JsValue {

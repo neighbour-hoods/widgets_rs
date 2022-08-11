@@ -2,8 +2,8 @@ use weblog::{console_error, console_log};
 use yew::prelude::*;
 
 use crate::{
+    holochain_client_wrapper::{connect, AdminWebsocket},
     myclass::MyClass,
-    holochain_client_wrapper::{AdminWebsocket, connect},
 };
 
 pub enum Msg {
