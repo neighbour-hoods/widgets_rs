@@ -2,6 +2,8 @@ use js_sys::{Function, Object, Promise, Reflect};
 use wasm_bindgen::{prelude::*, JsCast};
 use wasm_bindgen_futures::JsFuture;
 
+use macros::generate_call;
+
 #[derive(Clone, Debug)]
 pub struct AdminWebsocket {
     pub js_ws: JsValue,
@@ -19,6 +21,8 @@ pub enum AdminWsCmd {
 }
 
 impl AdminWebsocket {
+    generate_call!{AdminWsCmd}
+
     pub async fn disable_app(&self, installed_app_id: String) -> Result<(), JsValue> {
         let tag: &str = "disableApp";
         let method: Function = Reflect::get(&self.js_ws, &JsValue::from_str(&tag))?.dyn_into()?;

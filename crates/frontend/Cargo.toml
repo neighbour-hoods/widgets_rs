@@ -12,3 +12,5 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4.32"
 weblog = "0.3.0"
 yew = "0.19.3"
+
+macros = { path = "../macros" }

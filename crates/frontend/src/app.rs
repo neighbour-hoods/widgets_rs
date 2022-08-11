@@ -79,32 +79,14 @@ impl Component for Model {
                 console_error!(err);
                 true
             }
-            Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id }) => {
+            Msg::AdminWsCmd(cmd) => {
                 let ws_clone = self.admin_ws.clone();
                 match ws_clone {
-                    AdminWsState::Absent(_err) => console_log!("disableApp but no admin ws"),
+                    AdminWsState::Absent(_err) => console_log!("AdminWsCmd but no admin ws"),
                     AdminWsState::Present(ws) => {
-                        console_log!("disableApp w/ admin ws");
+                        console_log!("AdminWsCmd w/ admin ws");
                         ctx.link().send_future(async move {
-                            match ws.disable_app(installed_app_id).await {
-                                Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
-                                Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
-                                    format!("{:?}", err),
-                                )),
-                            }
-                        });
-                    }
-                };
-                false
-            }
-            Msg::AdminWsCmd(AdminWsCmd::EnableApp { installed_app_id }) => {
-                let ws_clone = self.admin_ws.clone();
-                match ws_clone {
-                    AdminWsState::Absent(_err) => console_log!("enableApp but no admin ws"),
-                    AdminWsState::Present(ws) => {
-                        console_log!("enableApp w/ admin ws");
-                        ctx.link().send_future(async move {
-                            match ws.enable_app(installed_app_id).await {
+                            match ws.call(cmd).await {
                                 Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
                                 Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
                                     format!("{:?}", err),
