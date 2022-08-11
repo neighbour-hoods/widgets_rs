@@ -18,6 +18,7 @@ pub enum Msg {
 
 pub enum AdminWsCmd {
     EnableApp,
+    DisableApp,
 }
 
 pub enum AdminWsCmdResponse {
@@ -83,6 +84,24 @@ impl Component for Model {
                 console_error!(err);
                 true
             }
+            Msg::AdminWsCmd(AdminWsCmd::DisableApp) => {
+                let ws_clone = self.admin_ws.clone();
+                match ws_clone {
+                    AdminWsState::Absent(_err) => console_log!("disableApp but no admin ws"),
+                    AdminWsState::Present(ws) => {
+                        console_log!("disableApp w/ admin ws");
+                        ctx.link().send_future(async move {
+                            match ws.disable_app("foobar".into()).await {
+                                Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
+                                Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
+                                    format!("{:?}", err),
+                                )),
+                            }
+                        });
+                    }
+                };
+                false
+            }
             Msg::AdminWsCmd(AdminWsCmd::EnableApp) => {
                 let ws_clone = self.admin_ws.clone();
                 match ws_clone {
@@ -131,6 +150,8 @@ impl Component for Model {
                 <p>{format!("{:?}", ws_debug)}</p>
 
                 <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp))}>{ "enableApp" }</button>
+                <br/>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp))}>{ "disableApp" }</button>
             </div>
         }
     }

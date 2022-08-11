@@ -14,6 +14,17 @@ impl From<AdminWebsocket> for JsValue {
 }
 
 impl AdminWebsocket {
+    pub async fn disable_app(&self, installed_app_id: String) -> Result<(), JsValue> {
+        let tag: &str = "disableApp";
+        let method: Function = Reflect::get(&self.js_ws, &JsValue::from_str(&tag))?.dyn_into()?;
+        let payload: JsValue =
+            mk_tagged_obj(tag, stringify!(installed_app_id), installed_app_id.into())?;
+        let promise: Promise = method.call1(&self.js_ws, &payload)?.dyn_into()?;
+        let future: JsFuture = promise.into();
+        future.await?;
+        Ok(())
+    }
+
     pub async fn enable_app(&self, installed_app_id: String) -> Result<(), JsValue> {
         let tag: &str = "enableApp";
         let method: Function = Reflect::get(&self.js_ws, &JsValue::from_str(&tag))?.dyn_into()?;
