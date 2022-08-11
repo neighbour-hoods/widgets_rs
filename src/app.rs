@@ -1,4 +1,3 @@
-use js_sys::Object;
 use weblog::{console_error, console_log};
 use yew::prelude::*;
 
@@ -88,7 +87,17 @@ impl Component for Model {
                 let ws_clone = self.admin_ws.clone();
                 match ws_clone {
                     AdminWsState::Absent(_err) => console_log!("activateApp but no admin ws"),
-                    AdminWsState::Present(ws) => console_log!("activateApp w/ admin ws"),
+                    AdminWsState::Present(ws) => {
+                        console_log!("activateApp w/ admin ws");
+                        ctx.link().send_future(async move {
+                            match ws.activate_app("foobar".into()).await {
+                                Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
+                                Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
+                                    format!("{:?}", err),
+                                )),
+                            }
+                        });
+                    }
                 };
                 false
             }
@@ -96,7 +105,7 @@ impl Component for Model {
                 match resp {
                     AdminWsCmdResponse::Success => {}
                     AdminWsCmdResponse::Error(err) => {
-                        console_error!("AdminWsCmdResponse: error: {}", err);
+                        console_error!("AdminWsCmdResponse: error:", err);
                     }
                 };
                 false

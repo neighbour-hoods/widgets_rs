@@ -1,5 +1,6 @@
-use js_sys::{Object, Reflect};
+use js_sys::{Function, Promise, Reflect};
 use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen_futures::JsFuture;
 
 #[derive(Clone, Debug)]
 pub struct AdminWebsocket {
@@ -13,10 +14,15 @@ impl From<AdminWebsocket> for JsValue {
 }
 
 impl AdminWebsocket {
-    pub async fn activate_app(&self, installed_app_id: String) -> Result<(), String> {
-        let method = Reflect::get(&self.js_ws, &JsValue::from_str("activateApp"))
-            .expect("activateApp method should exist");
-        todo!()
+    pub async fn activate_app(&self, installed_app_id: String) -> Result<(), JsValue> {
+        let method: Function =
+            Reflect::get(&self.js_ws, &JsValue::from_str("activateApp"))?.dyn_into()?;
+        let promise: Promise = method
+            .call1(&self.js_ws, &installed_app_id.into())?
+            .dyn_into()?;
+        let future: JsFuture = promise.into();
+        future.await?;
+        Ok(())
     }
 }
 
