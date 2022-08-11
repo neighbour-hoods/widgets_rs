@@ -13,6 +13,11 @@ impl From<AdminWebsocket> for JsValue {
     }
 }
 
+pub enum AdminWsCmd {
+    EnableApp { installed_app_id: String },
+    DisableApp { installed_app_id: String },
+}
+
 impl AdminWebsocket {
     pub async fn disable_app(&self, installed_app_id: String) -> Result<(), JsValue> {
         let tag: &str = "disableApp";

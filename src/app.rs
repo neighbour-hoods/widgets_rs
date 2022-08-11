@@ -2,7 +2,7 @@ use weblog::{console_error, console_log};
 use yew::prelude::*;
 
 use crate::{
-    holochain_client_wrapper::{connect, AdminWebsocket},
+    holochain_client_wrapper::{connect, AdminWebsocket, AdminWsCmd},
     myclass::MyClass,
 };
 
@@ -14,11 +14,6 @@ pub enum Msg {
     AdminWsError(String),
     AdminWsCmd(AdminWsCmd),
     AdminWsCmdResponse(AdminWsCmdResponse),
-}
-
-pub enum AdminWsCmd {
-    EnableApp,
-    DisableApp,
 }
 
 pub enum AdminWsCmdResponse {
@@ -84,14 +79,14 @@ impl Component for Model {
                 console_error!(err);
                 true
             }
-            Msg::AdminWsCmd(AdminWsCmd::DisableApp) => {
+            Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id }) => {
                 let ws_clone = self.admin_ws.clone();
                 match ws_clone {
                     AdminWsState::Absent(_err) => console_log!("disableApp but no admin ws"),
                     AdminWsState::Present(ws) => {
                         console_log!("disableApp w/ admin ws");
                         ctx.link().send_future(async move {
-                            match ws.disable_app("foobar".into()).await {
+                            match ws.disable_app(installed_app_id).await {
                                 Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
                                 Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
                                     format!("{:?}", err),
@@ -102,14 +97,14 @@ impl Component for Model {
                 };
                 false
             }
-            Msg::AdminWsCmd(AdminWsCmd::EnableApp) => {
+            Msg::AdminWsCmd(AdminWsCmd::EnableApp { installed_app_id }) => {
                 let ws_clone = self.admin_ws.clone();
                 match ws_clone {
                     AdminWsState::Absent(_err) => console_log!("enableApp but no admin ws"),
                     AdminWsState::Present(ws) => {
                         console_log!("enableApp w/ admin ws");
                         ctx.link().send_future(async move {
-                            match ws.enable_app("foobar".into()).await {
+                            match ws.enable_app(installed_app_id).await {
                                 Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
                                 Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
                                     format!("{:?}", err),
@@ -149,9 +144,9 @@ impl Component for Model {
                 <p>{format!("{:?}", self.admin_ws)}</p>
                 <p>{format!("{:?}", ws_debug)}</p>
 
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp))}>{ "enableApp" }</button>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp { installed_app_id: "foobar".into() }))}>{ "enableApp" }</button>
                 <br/>
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp))}>{ "disableApp" }</button>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id: "foobar".into() }))}>{ "disableApp" }</button>
             </div>
         }
     }
