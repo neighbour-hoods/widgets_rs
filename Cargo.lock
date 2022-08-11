@@ -43,6 +43,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "frontend"
+version = "0.1.0"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "weblog",
+ "yew",
+]
+
+[[package]]
 name = "gloo"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -193,6 +204,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
 dependencies = [
  "cfg-if 1.0.0",
+]
+
+[[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -452,17 +472,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "yew-macro",
-]
-
-[[package]]
-name = "yew-app"
-version = "0.1.0"
-dependencies = [
- "js-sys",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "weblog",
- "yew",
 ]
 
 [[package]]

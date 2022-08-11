@@ -1,6 +1,6 @@
-import init, { run_app } from './pkg/yew_app.js';
+import init, { run_app } from './pkg/frontend.js';
 async function main() {
-   await init('/pkg/yew_app_bg.wasm');
+   await init('/pkg/frontend_bg.wasm');
    run_app();
 }
 main()
