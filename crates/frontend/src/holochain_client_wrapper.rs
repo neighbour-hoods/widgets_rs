@@ -21,22 +21,6 @@ pub enum AdminWsCmd {
     DisableApp { installed_app_id: String },
 }
 
-/// `tag` is more like "method name" here.
-fn mk_tagged_obj(tag: &str, payload_key: &str, payload: JsValue) -> Result<JsValue, JsValue> {
-    let target: JsValue = Object::new().dyn_into()?;
-    assert!(Reflect::set(
-        &target,
-        &JsValue::from_str("tag"),
-        &JsValue::from_str(tag)
-    )?);
-    assert!(Reflect::set(
-        &target,
-        &JsValue::from_str(payload_key),
-        &payload
-    )?);
-    Ok(target)
-}
-
 #[wasm_bindgen(module = "/src/holochain_client_wrapper.js")]
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = AdminWebsocket, js_name="connect")]
