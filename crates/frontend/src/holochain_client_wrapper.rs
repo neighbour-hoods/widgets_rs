@@ -19,6 +19,7 @@ impl From<AdminWebsocket> for JsValue {
 pub enum AdminWsCmd {
     EnableApp { installed_app_id: String },
     DisableApp { installed_app_id: String },
+    GenerateAgentPubKey,
 }
 
 #[wasm_bindgen(module = "/src/holochain_client_wrapper.js")]

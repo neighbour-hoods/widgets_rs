@@ -126,9 +126,11 @@ impl Component for Model {
                 <p>{format!("{:?}", self.admin_ws)}</p>
                 <p>{format!("{:?}", ws_debug)}</p>
 
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp { installed_app_id: "foobar".into() }))}>{ "enableApp" }</button>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp { installed_app_id: "foobar".into() }))}>{ "EnableApp" }</button>
                 <br/>
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id: "foobar".into() }))}>{ "disableApp" }</button>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id: "foobar".into() }))}>{ "DisableApp" }</button>
+                <br/>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::GenerateAgentPubKey))}>{ "GenerateAgentPubKey" }</button>
             </div>
         }
     }
