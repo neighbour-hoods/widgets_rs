@@ -31,7 +31,6 @@
               })
               miniserve
               nodejs
-              nodePackages.rollup
               openssl
               pkgconfig
               wasm-pack
