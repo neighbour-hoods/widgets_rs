@@ -1,3 +1,4 @@
+use js_sys::Object;
 use weblog::{console_error, console_log};
 use yew::prelude::*;
 
@@ -104,6 +105,10 @@ impl Component for Model {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let ws_debug: String = match &self.admin_ws {
+            AdminWsState::Absent(_err) => "admin_ws absent".into(),
+            AdminWsState::Present(ws) => format!("typeof: {:?}", ws.js_ws.js_typeof(),),
+        };
         html! {
             <div>
                 <button onclick={ctx.link().callback(|_| Msg::AddOne)}>{ "+1" }</button>
@@ -114,6 +119,7 @@ impl Component for Model {
                 <p>{self.myclass.render()}</p>
 
                 <p>{format!("{:?}", self.admin_ws)}</p>
+                <p>{format!("{:?}", ws_debug)}</p>
 
                 <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::ActivateApp))}>{ "activateApp" }</button>
             </div>

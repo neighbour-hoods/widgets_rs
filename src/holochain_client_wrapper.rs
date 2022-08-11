@@ -1,13 +1,22 @@
-use wasm_bindgen::prelude::*;
+use js_sys::{Object, Reflect};
+use wasm_bindgen::{prelude::*, JsCast};
 
 #[derive(Clone, Debug)]
 pub struct AdminWebsocket {
-    js_ws: JsValue,
+    pub js_ws: JsValue,
 }
 
 impl From<AdminWebsocket> for JsValue {
     fn from(ws: AdminWebsocket) -> Self {
         ws.js_ws
+    }
+}
+
+impl AdminWebsocket {
+    pub async fn activate_app(&self, installed_app_id: String) -> Result<(), String> {
+        let method = Reflect::get(&self.js_ws, &JsValue::from_str("activateApp"))
+            .expect("activateApp method should exist");
+        todo!()
     }
 }
 
