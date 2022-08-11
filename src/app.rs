@@ -17,7 +17,7 @@ pub enum Msg {
 }
 
 pub enum AdminWsCmd {
-    ActivateApp,
+    EnableApp,
 }
 
 pub enum AdminWsCmdResponse {
@@ -83,14 +83,14 @@ impl Component for Model {
                 console_error!(err);
                 true
             }
-            Msg::AdminWsCmd(AdminWsCmd::ActivateApp) => {
+            Msg::AdminWsCmd(AdminWsCmd::EnableApp) => {
                 let ws_clone = self.admin_ws.clone();
                 match ws_clone {
-                    AdminWsState::Absent(_err) => console_log!("activateApp but no admin ws"),
+                    AdminWsState::Absent(_err) => console_log!("enableApp but no admin ws"),
                     AdminWsState::Present(ws) => {
-                        console_log!("activateApp w/ admin ws");
+                        console_log!("enableApp w/ admin ws");
                         ctx.link().send_future(async move {
-                            match ws.activate_app("foobar".into()).await {
+                            match ws.enable_app("foobar".into()).await {
                                 Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
                                 Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
                                     format!("{:?}", err),
@@ -130,7 +130,7 @@ impl Component for Model {
                 <p>{format!("{:?}", self.admin_ws)}</p>
                 <p>{format!("{:?}", ws_debug)}</p>
 
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::ActivateApp))}>{ "activateApp" }</button>
+                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp))}>{ "enableApp" }</button>
             </div>
         }
     }

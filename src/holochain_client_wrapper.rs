@@ -14,9 +14,9 @@ impl From<AdminWebsocket> for JsValue {
 }
 
 impl AdminWebsocket {
-    pub async fn activate_app(&self, installed_app_id: String) -> Result<(), JsValue> {
+    pub async fn enable_app(&self, installed_app_id: String) -> Result<(), JsValue> {
         let method: Function =
-            Reflect::get(&self.js_ws, &JsValue::from_str("activateApp"))?.dyn_into()?;
+            Reflect::get(&self.js_ws, &JsValue::from_str("enableApp"))?.dyn_into()?;
         let promise: Promise = method
             .call1(&self.js_ws, &installed_app_id.into())?
             .dyn_into()?;
