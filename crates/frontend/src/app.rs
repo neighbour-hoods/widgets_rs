@@ -1,5 +1,6 @@
+use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
-use yew::prelude::*;
+use yew::{html::Scope, prelude::*};
 
 use crate::{
     holochain_client_wrapper::{connect, AdminWebsocket, AdminWsCmd},
@@ -131,7 +132,38 @@ impl Component for Model {
                 <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id: "foobar".into() }))}>{ "DisableApp" }</button>
                 <br/>
                 <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::GenerateAgentPubKey))}>{ "GenerateAgentPubKey" }</button>
+                <br/>
+                { self.view_attach_app_interface(ctx.link()) }
             </div>
+        }
+    }
+}
+
+impl Model {
+    fn view_attach_app_interface(&self, link: &Scope<Self>) -> Html {
+        let onkeypress = link.batch_callback(|e: KeyboardEvent| {
+            if e.key() == "Enter" {
+                let input: InputElement = e.target_unchecked_into();
+                match input.value().parse() {
+                    Ok(port) => {
+                        input.set_value("");
+                        Some(Msg::AdminWsCmd(AdminWsCmd::AttachAppInterface { port }))
+                    }
+                    Err(err) => {
+                        console_error!(format!("invalid port string: {}", err));
+                        None
+                    }
+                }
+            } else {
+                None
+            }
+        });
+        html! {
+            <input
+                class="attach_app_interface"
+                placeholder="desired app port?"
+                {onkeypress}
+            />
         }
     }
 }

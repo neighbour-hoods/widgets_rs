@@ -50,6 +50,7 @@ dependencies = [
  "macros",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "web-sys",
  "weblog",
  "yew",
 ]

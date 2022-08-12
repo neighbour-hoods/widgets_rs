@@ -20,6 +20,7 @@ pub enum AdminWsCmd {
     EnableApp { installed_app_id: String },
     DisableApp { installed_app_id: String },
     GenerateAgentPubKey,
+    AttachAppInterface { port: u16 },
 }
 
 #[wasm_bindgen(module = "/src/holochain_client_wrapper.js")]
