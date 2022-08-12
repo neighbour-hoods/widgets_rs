@@ -115,6 +115,12 @@ impl Component for Model {
             AdminWsState::Absent(_err) => "admin_ws absent".into(),
             AdminWsState::Present(ws) => format!("typeof: {:?}", ws.js_ws.js_typeof(),),
         };
+        let attach_app_interface_handler = |input: String| {
+            input
+                .parse()
+                .map(|port| Msg::AdminWsCmd(AdminWsCmd::AttachAppInterface { port }))
+                .map_err(|err| format!("attach_app_interface_handler: {}", err))
+        };
         html! {
             <div>
                 <button onclick={ctx.link().callback(|_| Msg::AddOne)}>{ "+1" }</button>
@@ -133,24 +139,27 @@ impl Component for Model {
                 <br/>
                 <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::GenerateAgentPubKey))}>{ "GenerateAgentPubKey" }</button>
                 <br/>
-                { self.view_attach_app_interface(ctx.link()) }
+                { self.view_string_input(attach_app_interface_handler, ctx.link()) }
             </div>
         }
     }
 }
 
 impl Model {
-    fn view_attach_app_interface(&self, link: &Scope<Self>) -> Html {
-        let onkeypress = link.batch_callback(|e: KeyboardEvent| {
+    fn view_string_input<F>(&self, f: F, link: &Scope<Self>) -> Html
+    where
+        F: Fn(String) -> Result<Msg, String> + 'static,
+    {
+        let onkeypress = link.batch_callback(move |e: KeyboardEvent| {
             if e.key() == "Enter" {
                 let input: InputElement = e.target_unchecked_into();
-                match input.value().parse() {
-                    Ok(port) => {
+                match f(input.value()) {
+                    Ok(msg) => {
                         input.set_value("");
-                        Some(Msg::AdminWsCmd(AdminWsCmd::AttachAppInterface { port }))
+                        Some(msg)
                     }
                     Err(err) => {
-                        console_error!(format!("invalid port string: {}", err));
+                        console_error!(format!("view_string_input: {}", err));
                         None
                     }
                 }
