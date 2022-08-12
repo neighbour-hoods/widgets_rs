@@ -16,10 +16,15 @@ impl From<AdminWebsocket> for JsValue {
 }
 
 #[generate_call]
+#[derive(Clone, Debug)]
 pub enum AdminWsCmd {
     EnableApp { installed_app_id: String },
     DisableApp { installed_app_id: String },
+    UninstallApp { installed_app_id: String },
     GenerateAgentPubKey,
+    ListDnas,
+    ListCellIds,
+    ListActiveApps,
     AttachAppInterface { port: u16 },
 }
 

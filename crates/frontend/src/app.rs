@@ -125,11 +125,22 @@ impl Component for Model {
                 installed_app_id: input,
             }))
         };
+        let uninstall_app_handler = |input: String| {
+            Ok(Msg::AdminWsCmd(AdminWsCmd::UninstallApp {
+                installed_app_id: input,
+            }))
+        };
         let attach_app_interface_handler = |input: String| {
             input
                 .parse()
                 .map(|port| Msg::AdminWsCmd(AdminWsCmd::AttachAppInterface { port }))
                 .map_err(|err| format!("attach_app_interface_handler: {}", err))
+        };
+        let mk_nullary_button = |msg: AdminWsCmd| {
+            let msg_ = msg.clone();
+            html! {
+                <button onclick={ctx.link().callback(move |_| Msg::AdminWsCmd(msg.clone()))}>{ format!("{:?}", msg_) }</button>
+            }
         };
         html! {
             <div>
@@ -147,9 +158,17 @@ impl Component for Model {
                 <br/>
                 { self.view_string_input(ctx.link(), disable_app_handler, "disable_app".into(), "disable which app?".into()) }
                 <br/>
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::GenerateAgentPubKey))}>{ "GenerateAgentPubKey" }</button>
+                { self.view_string_input(ctx.link(), uninstall_app_handler, "uninstall_app".into(), "uninstall which app?".into()) }
                 <br/>
                 { self.view_string_input(ctx.link(), attach_app_interface_handler, "attach_app_interface".into(), "desired app port?".into()) }
+                <br/>
+                { mk_nullary_button(AdminWsCmd::GenerateAgentPubKey) }
+                <br/>
+                { mk_nullary_button(AdminWsCmd::ListDnas) }
+                <br/>
+                { mk_nullary_button(AdminWsCmd::ListCellIds) }
+                <br/>
+                { mk_nullary_button(AdminWsCmd::ListActiveApps) }
             </div>
         }
     }
