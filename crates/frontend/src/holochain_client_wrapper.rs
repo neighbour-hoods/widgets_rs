@@ -28,6 +28,35 @@ pub enum AdminWsCmd {
     AttachAppInterface { port: u16 },
 }
 
+#[derive(Clone, Debug)]
+pub enum AdminWsCmdResponse {
+    EnableApp(JsValue),
+    DisableApp(JsValue),
+    UninstallApp(JsValue),
+    GenerateAgentPubKey(JsValue),
+    ListDnas(JsValue),
+    ListCellIds(JsValue),
+    ListActiveApps(JsValue),
+    AttachAppInterface(JsValue),
+}
+
+fn parse_admin_ws_cmd_response(val: JsValue, tag: String) -> AdminWsCmdResponse {
+    match tag.as_str() {
+        "EnableApp" => AdminWsCmdResponse::EnableApp(val),
+        "DisableApp" => AdminWsCmdResponse::DisableApp(val),
+        "UninstallApp" => AdminWsCmdResponse::UninstallApp(val),
+        "GenerateAgentPubKey" => AdminWsCmdResponse::GenerateAgentPubKey(val),
+        "ListDnas" => AdminWsCmdResponse::ListDnas(val),
+        "ListCellIds" => AdminWsCmdResponse::ListCellIds(val),
+        "ListActiveApps" => AdminWsCmdResponse::ListActiveApps(val),
+        "AttachAppInterface" => AdminWsCmdResponse::AttachAppInterface(val),
+        other => panic!(
+            "parse_admin_ws_cmd_response: impossible: received unknown tag: {}",
+            other
+        ),
+    }
+}
+
 #[wasm_bindgen(module = "/src/holochain_client_wrapper.js")]
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = AdminWebsocket, js_name="connect")]

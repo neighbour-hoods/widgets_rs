@@ -4,7 +4,7 @@ use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
 
 use crate::{
-    holochain_client_wrapper::{connect, AdminWebsocket, AdminWsCmd},
+    holochain_client_wrapper::{connect, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse},
     myclass::MyClass,
 };
 
@@ -15,12 +15,7 @@ pub enum Msg {
     AdminWsConnected(AdminWebsocket),
     AdminWsError(String),
     AdminWsCmd(AdminWsCmd),
-    AdminWsCmdResponse(AdminWsCmdResponse),
-}
-
-pub enum AdminWsCmdResponse {
-    Success(JsValue),
-    Error(String),
+    AdminWsCmdResponse(Result<AdminWsCmdResponse, JsValue>),
 }
 
 #[derive(Clone, Debug)]
@@ -88,14 +83,7 @@ impl Component for Model {
                     AdminWsState::Present(ws) => {
                         console_log!("AdminWsCmd w/ admin ws");
                         ctx.link().send_future(async move {
-                            match ws.call(cmd).await {
-                                Ok(val) => {
-                                    Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success(val))
-                                }
-                                Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
-                                    format!("{:?}", err),
-                                )),
-                            }
+                            Msg::AdminWsCmdResponse(ws.call(cmd).await)
                         });
                     }
                 };
@@ -103,11 +91,11 @@ impl Component for Model {
             }
             Msg::AdminWsCmdResponse(resp) => {
                 match resp {
-                    AdminWsCmdResponse::Success(val) => {
-                        console_log!(format!("AdminWsCmdResponse::Success: {:?}", val));
+                    Ok(val) => {
+                        console_log!(format!("AdminWsCmdResponse: {:?}", val));
                     }
-                    AdminWsCmdResponse::Error(err) => {
-                        console_error!("AdminWsCmdResponse: error:", err);
+                    Err(err) => {
+                        console_error!(format!("AdminWsCmdResponse: error: {:?}", err));
                     }
                 };
                 false
