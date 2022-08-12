@@ -115,6 +115,16 @@ impl Component for Model {
             AdminWsState::Absent(_err) => "admin_ws absent".into(),
             AdminWsState::Present(ws) => format!("typeof: {:?}", ws.js_ws.js_typeof(),),
         };
+        let enable_app_handler = |input: String| {
+            Ok(Msg::AdminWsCmd(AdminWsCmd::EnableApp {
+                installed_app_id: input,
+            }))
+        };
+        let disable_app_handler = |input: String| {
+            Ok(Msg::AdminWsCmd(AdminWsCmd::DisableApp {
+                installed_app_id: input,
+            }))
+        };
         let attach_app_interface_handler = |input: String| {
             input
                 .parse()
@@ -133,20 +143,26 @@ impl Component for Model {
                 <p>{format!("{:?}", self.admin_ws)}</p>
                 <p>{format!("{:?}", ws_debug)}</p>
 
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::EnableApp { installed_app_id: "foobar".into() }))}>{ "EnableApp" }</button>
+                { self.view_string_input(ctx.link(), enable_app_handler, "enable_app".into(), "enable which app?".into()) }
                 <br/>
-                <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::DisableApp { installed_app_id: "foobar".into() }))}>{ "DisableApp" }</button>
+                { self.view_string_input(ctx.link(), disable_app_handler, "disable_app".into(), "disable which app?".into()) }
                 <br/>
                 <button onclick={ctx.link().callback(|_| Msg::AdminWsCmd(AdminWsCmd::GenerateAgentPubKey))}>{ "GenerateAgentPubKey" }</button>
                 <br/>
-                { self.view_string_input(attach_app_interface_handler, ctx.link()) }
+                { self.view_string_input(ctx.link(), attach_app_interface_handler, "attach_app_interface".into(), "desired app port?".into()) }
             </div>
         }
     }
 }
 
 impl Model {
-    fn view_string_input<F>(&self, f: F, link: &Scope<Self>) -> Html
+    fn view_string_input<F>(
+        &self,
+        link: &Scope<Self>,
+        f: F,
+        class: String,
+        placeholder: String,
+    ) -> Html
     where
         F: Fn(String) -> Result<Msg, String> + 'static,
     {
@@ -169,8 +185,8 @@ impl Model {
         });
         html! {
             <input
-                class="attach_app_interface"
-                placeholder="desired app port?"
+                {class}
+                {placeholder}
                 {onkeypress}
             />
         }
