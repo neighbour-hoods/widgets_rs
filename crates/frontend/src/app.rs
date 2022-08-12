@@ -1,3 +1,4 @@
+use wasm_bindgen::prelude::*;
 use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
@@ -18,7 +19,7 @@ pub enum Msg {
 }
 
 pub enum AdminWsCmdResponse {
-    Success,
+    Success(JsValue),
     Error(String),
 }
 
@@ -88,7 +89,9 @@ impl Component for Model {
                         console_log!("AdminWsCmd w/ admin ws");
                         ctx.link().send_future(async move {
                             match ws.call(cmd).await {
-                                Ok(_) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success),
+                                Ok(val) => {
+                                    Msg::AdminWsCmdResponse(AdminWsCmdResponse::Success(val))
+                                }
                                 Err(err) => Msg::AdminWsCmdResponse(AdminWsCmdResponse::Error(
                                     format!("{:?}", err),
                                 )),
@@ -100,7 +103,9 @@ impl Component for Model {
             }
             Msg::AdminWsCmdResponse(resp) => {
                 match resp {
-                    AdminWsCmdResponse::Success => {}
+                    AdminWsCmdResponse::Success(val) => {
+                        console_log!(format!("AdminWsCmdResponse::Success: {:?}", val));
+                    }
                     AdminWsCmdResponse::Error(err) => {
                         console_error!("AdminWsCmdResponse: error:", err);
                     }
