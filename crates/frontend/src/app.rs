@@ -209,21 +209,33 @@ impl Component for Model {
                 <p>{format!("admin_ws: {:?}", self.admin_ws)}</p>
                 <p>{format!("{:?}", ws_debug)}</p>
 
-                { self.view_string_input(ctx.link(), enable_app_handler, "enable_app".into(), "enable which app?".into()) }
+                { self.view_string_input(ctx.link(), attach_app_interface_handler, "attach_app_interface".into(), "desired app port?".into()) }
                 <br/>
                 { self.view_string_input(ctx.link(), disable_app_handler, "disable_app".into(), "disable which app?".into()) }
                 <br/>
-                { self.view_string_input(ctx.link(), uninstall_app_handler, "uninstall_app".into(), "uninstall which app?".into()) }
-                <br/>
-                { self.view_string_input(ctx.link(), attach_app_interface_handler, "attach_app_interface".into(), "desired app port?".into()) }
+                // dump_state
+                // <br/>
+                { self.view_string_input(ctx.link(), enable_app_handler, "enable_app".into(), "enable which app?".into()) }
                 <br/>
                 { mk_nullary_button(AdminWsCmd::GenerateAgentPubKey) }
+                <br/>
+                // register_dna
+                // <br/>
+                // install_app_bundle
+                // <br/>
+                // install_app
+                // <br/>
+                { self.view_string_input(ctx.link(), uninstall_app_handler, "uninstall_app".into(), "uninstall which app?".into()) }
                 <br/>
                 { mk_nullary_button(AdminWsCmd::ListDnas) }
                 <br/>
                 { mk_nullary_button(AdminWsCmd::ListCellIds) }
                 <br/>
                 { mk_nullary_button(AdminWsCmd::ListActiveApps) }
+                // request_agent_info
+                // <br/>
+                // add_agent_info
+                // <br/>
 
                 <br/>
                 <br/>
