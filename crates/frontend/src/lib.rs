@@ -1,5 +1,5 @@
 mod app;
-mod holochain_client_wrapper;
+pub mod holochain_client_wrapper;
 mod myclass;
 
 use wasm_bindgen::prelude::*;

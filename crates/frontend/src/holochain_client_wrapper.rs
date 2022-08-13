@@ -35,6 +35,11 @@ pub async fn connect_admin_ws(url: String, timeout: Option<u32>) -> Result<Admin
     }
 }
 
+/// each constructor of this enum corresponds to a method on the AdminWebsocket:
+/// <https://github.com/holochain/holochain-client-js/blob/develop/docs/API_adminwebsocket.md>
+///
+/// n.b. the order of the constructors is non-alphabetical & corresponds to the documentation
+/// order.
 #[generate_call(
     AdminWebsocket,
     AdminWsCmd,
@@ -43,38 +48,59 @@ pub async fn connect_admin_ws(url: String, timeout: Option<u32>) -> Result<Admin
 )]
 #[derive(Clone, Debug)]
 pub enum AdminWsCmd {
-    EnableApp { installed_app_id: String },
+    AttachAppInterface { port: u16 },
     DisableApp { installed_app_id: String },
-    UninstallApp { installed_app_id: String },
+    // DumpState({ cell_id }),
+    EnableApp { installed_app_id: String },
     GenerateAgentPubKey,
+    // RegisterDna({ source as path | bundle | hash, uid?, properties? }),
+    // InstallAppBundle({ installed_app_id, source as path | bundle | hash, uid?, properties? }),
+    // InstallApp({ installed_app_id, agent_key, dnas }),
+    UninstallApp { installed_app_id: String },
     ListDnas,
     ListCellIds,
     ListActiveApps,
-    AttachAppInterface { port: u16 },
+    // RequestAgentInfo({ cell_id }),
+    // AddAgentInfo({ agent_infos }),
 }
+
+// TODO consider statically checking that AdminWsCmd/AdminWsCmdResponse have the right # of
+// constructors and all their names match up. can also apply to AppWsCmd/AppWsCmdResponse.
 
 #[derive(Clone, Debug)]
 pub enum AdminWsCmdResponse {
-    EnableApp(JsValue),
+    AttachAppInterface(JsValue),
     DisableApp(JsValue),
-    UninstallApp(JsValue),
+    // DumpState(JsValue),
+    EnableApp(JsValue),
     GenerateAgentPubKey(JsValue),
+    // RegisterDna(JsValue),
+    // InstallAppBundle(JsValue),
+    // InstallApp(JsValue),
+    UninstallApp(JsValue),
     ListDnas(JsValue),
     ListCellIds(JsValue),
     ListActiveApps(JsValue),
-    AttachAppInterface(JsValue),
+    // RequestAgentInfo(JsValue),
+    // AddAgentInfo(JsValue),
 }
 
 fn parse_admin_ws_cmd_response(val: JsValue, tag: String) -> AdminWsCmdResponse {
     match tag.as_str() {
-        "EnableApp" => AdminWsCmdResponse::EnableApp(val),
+        "AttachAppInterface" => AdminWsCmdResponse::AttachAppInterface(val),
         "DisableApp" => AdminWsCmdResponse::DisableApp(val),
-        "UninstallApp" => AdminWsCmdResponse::UninstallApp(val),
+        // "DumpState" => AdminWsCmdResponse::DumpState(val),
+        "EnableApp" => AdminWsCmdResponse::EnableApp(val),
         "GenerateAgentPubKey" => AdminWsCmdResponse::GenerateAgentPubKey(val),
+        // "RegisterDna" => AdminWsCmdResponse::RegisterDna(val),
+        // "InstallAppBundle" => AdminWsCmdResponse::InstallAppBundle(val),
+        // "InstallApp" => AdminWsCmdResponse::InstallApp(val),
+        "UninstallApp" => AdminWsCmdResponse::UninstallApp(val),
         "ListDnas" => AdminWsCmdResponse::ListDnas(val),
         "ListCellIds" => AdminWsCmdResponse::ListCellIds(val),
         "ListActiveApps" => AdminWsCmdResponse::ListActiveApps(val),
-        "AttachAppInterface" => AdminWsCmdResponse::AttachAppInterface(val),
+        // "RequestAgentInfo" => AdminWsCmdResponse::RequestAgentInfo(val),
+        // "AddAgentInfo" => AdminWsCmdResponse::AddAgentInfo(val),
         other => panic!(
             "parse_admin_ws_cmd_response: impossible: received unknown tag: {}",
             other
@@ -104,6 +130,8 @@ pub async fn connect_app_ws(url: String, timeout: Option<u32>) -> Result<AppWebs
     }
 }
 
+/// n.b. the order of the constructors is non-alphabetical & corresponds to the order documented in
+/// <https://github.com/holochain/holochain-client-js/blob/develop/docs/API_appwebsocket.md>
 #[generate_call(AppWebsocket, AppWsCmd, AppWsCmdResponse, parse_app_ws_cmd_response)]
 #[derive(Clone, Debug)]
 pub enum AppWsCmd {
