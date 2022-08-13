@@ -1,4 +1,4 @@
-use js_sys::{Function, Object, Promise, Reflect};
+use js_sys::{Array, Function, Object, Promise, Reflect};
 use wasm_bindgen::{prelude::*, JsCast};
 use wasm_bindgen_futures::JsFuture;
 
@@ -46,6 +46,16 @@ impl<T: SerializeToJsObj> SerializeToJsObj for Option<T> {
     }
 }
 
+impl<T: SerializeToJsObj> SerializeToJsObj for Vec<T> {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let val = Array::new();
+        for e in self.into_iter().rev() {
+            let _ = val.push(&e.serialize_to_js_obj());
+        }
+        val.dyn_into().expect("Array conversion to succeed")
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct DnaHash(JsValue);
 
@@ -53,6 +63,53 @@ impl SerializeToJsObj for DnaHash {
     fn serialize_to_js_obj(self) -> JsValue {
         let DnaHash(val) = self;
         val
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct AgentPk(JsValue);
+
+impl SerializeToJsObj for AgentPk {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let AgentPk(val) = self;
+        val
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct HashRoleProof {
+    hash: DnaHash,
+    role: String,
+    membrane_proof: Option<String>,
+}
+
+impl SerializeToJsObj for HashRoleProof {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let ret = move || -> Result<JsValue, JsValue> {
+            let val: JsValue = Object::new().dyn_into()?;
+            assert!(Reflect::set(
+                &val,
+                &JsValue::from_str("hash"),
+                &self.hash.serialize_to_js_obj(),
+            )?);
+            assert!(Reflect::set(
+                &val,
+                &JsValue::from_str("role"),
+                &self.role.serialize_to_js_obj(),
+            )?);
+            match self.membrane_proof {
+                None => {}
+                Some(mp) => {
+                    assert!(Reflect::set(
+                        &val,
+                        &JsValue::from_str("membrane_proof"),
+                        &mp.serialize_to_js_obj(),
+                    )?);
+                }
+            };
+            Ok(val)
+        };
+        ret().expect("operations to succeed")
     }
 }
 
@@ -118,7 +175,11 @@ pub enum AdminWsCmd {
         properties: Option<String>,
     },
     // InstallAppBundle({ installed_app_id, source as path | bundle | hash, uid?, properties? }),
-    // InstallApp({ installed_app_id, agent_key, dnas }),
+    InstallApp {
+        installed_app_id: String,
+        agent_key: AgentPk,
+        dnas: Vec<HashRoleProof>,
+    },
     UninstallApp {
         installed_app_id: String,
     },
@@ -138,10 +199,10 @@ pub enum AdminWsCmdResponse {
     DisableApp(JsValue),
     // DumpState(JsValue),
     EnableApp(JsValue),
-    GenerateAgentPubKey(JsValue),
+    GenerateAgentPubKey(AgentPk),
     RegisterDna(DnaHash),
     // InstallAppBundle(JsValue),
-    // InstallApp(JsValue),
+    InstallApp(JsValue),
     UninstallApp(JsValue),
     ListDnas(JsValue),
     ListCellIds(JsValue),
@@ -156,10 +217,10 @@ fn parse_admin_ws_cmd_response(val: JsValue, tag: String) -> AdminWsCmdResponse 
         "DisableApp" => AdminWsCmdResponse::DisableApp(val),
         // "DumpState" => AdminWsCmdResponse::DumpState(val),
         "EnableApp" => AdminWsCmdResponse::EnableApp(val),
-        "GenerateAgentPubKey" => AdminWsCmdResponse::GenerateAgentPubKey(val),
+        "GenerateAgentPubKey" => AdminWsCmdResponse::GenerateAgentPubKey(AgentPk(val)),
         "RegisterDna" => AdminWsCmdResponse::RegisterDna(DnaHash(val)),
         // "InstallAppBundle" => AdminWsCmdResponse::InstallAppBundle(val),
-        // "InstallApp" => AdminWsCmdResponse::InstallApp(val),
+        "InstallApp" => AdminWsCmdResponse::InstallApp(val),
         "UninstallApp" => AdminWsCmdResponse::UninstallApp(val),
         "ListDnas" => AdminWsCmdResponse::ListDnas(val),
         "ListCellIds" => AdminWsCmdResponse::ListCellIds(val),
