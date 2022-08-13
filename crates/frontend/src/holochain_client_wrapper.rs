@@ -4,6 +4,10 @@ use wasm_bindgen_futures::JsFuture;
 
 use macros::generate_call;
 
+////////////////////////////////////////////////////////////////////////////////
+// wasm_bindgen key bindings
+////////////////////////////////////////////////////////////////////////////////
+
 #[wasm_bindgen(module = "/src/holochain_client_wrapper.js")]
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = AdminWebsocket, js_name="connect")]
@@ -12,6 +16,55 @@ extern "C" {
     #[wasm_bindgen(catch, js_namespace = AppWebsocket, js_name="connect")]
     async fn connect_app_ws_js(url: String, timeout: Option<u32>) -> Result<JsValue, JsValue>;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// SerializeToJsObj trait
+////////////////////////////////////////////////////////////////////////////////
+
+trait SerializeToJsObj {
+    fn serialize_to_js_obj(self) -> JsValue;
+}
+
+impl SerializeToJsObj for u16 {
+    fn serialize_to_js_obj(self) -> JsValue {
+        self.into()
+    }
+}
+
+impl SerializeToJsObj for String {
+    fn serialize_to_js_obj(self) -> JsValue {
+        self.into()
+    }
+}
+
+impl<T: SerializeToJsObj> SerializeToJsObj for Option<T> {
+    fn serialize_to_js_obj(self) -> JsValue {
+        match self {
+            None => JsValue::NULL,
+            Some(v) => v.serialize_to_js_obj(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct DnaHash(JsValue);
+
+impl SerializeToJsObj for DnaHash {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let DnaHash(val) = self;
+        val
+    }
+}
+
+// TODO figure out why this doesn't work - unsatisfied trait bounds for String
+// impl<T> SerializeToJsObj for T
+// where
+//     T: JsCast,
+// {
+//     fn serialize_to_js_obj(self) -> JsValue {
+//         self.into()
+//     }
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 // AdminWebsocket
@@ -48,15 +101,27 @@ pub async fn connect_admin_ws(url: String, timeout: Option<u32>) -> Result<Admin
 )]
 #[derive(Clone, Debug)]
 pub enum AdminWsCmd {
-    AttachAppInterface { port: u16 },
-    DisableApp { installed_app_id: String },
+    AttachAppInterface {
+        port: u16,
+    },
+    DisableApp {
+        installed_app_id: String,
+    },
     // DumpState({ cell_id }),
-    EnableApp { installed_app_id: String },
+    EnableApp {
+        installed_app_id: String,
+    },
     GenerateAgentPubKey,
-    // RegisterDna({ source as path | bundle | hash, uid?, properties? }),
+    RegisterDna {
+        path: String,
+        uid: Option<String>,
+        properties: Option<String>,
+    },
     // InstallAppBundle({ installed_app_id, source as path | bundle | hash, uid?, properties? }),
     // InstallApp({ installed_app_id, agent_key, dnas }),
-    UninstallApp { installed_app_id: String },
+    UninstallApp {
+        installed_app_id: String,
+    },
     ListDnas,
     ListCellIds,
     ListActiveApps,
@@ -74,7 +139,7 @@ pub enum AdminWsCmdResponse {
     // DumpState(JsValue),
     EnableApp(JsValue),
     GenerateAgentPubKey(JsValue),
-    // RegisterDna(JsValue),
+    RegisterDna(DnaHash),
     // InstallAppBundle(JsValue),
     // InstallApp(JsValue),
     UninstallApp(JsValue),
@@ -92,7 +157,7 @@ fn parse_admin_ws_cmd_response(val: JsValue, tag: String) -> AdminWsCmdResponse 
         // "DumpState" => AdminWsCmdResponse::DumpState(val),
         "EnableApp" => AdminWsCmdResponse::EnableApp(val),
         "GenerateAgentPubKey" => AdminWsCmdResponse::GenerateAgentPubKey(val),
-        // "RegisterDna" => AdminWsCmdResponse::RegisterDna(val),
+        "RegisterDna" => AdminWsCmdResponse::RegisterDna(DnaHash(val)),
         // "InstallAppBundle" => AdminWsCmdResponse::InstallAppBundle(val),
         // "InstallApp" => AdminWsCmdResponse::InstallApp(val),
         "UninstallApp" => AdminWsCmdResponse::UninstallApp(val),
@@ -107,6 +172,23 @@ fn parse_admin_ws_cmd_response(val: JsValue, tag: String) -> AdminWsCmdResponse 
         ),
     }
 }
+
+////////////////////////////////////////
+// payloads
+////////////////////////////////////////
+
+// this might be a good idea, but we'll leave it for later, maybe.
+// pub struct RegisterDnaPayload {
+//     bundle_src: BundleSource,
+//     uid: Option<String>,
+//     properties: Option<String>,
+// }
+
+// pub enum BundleSource {
+//     Path(String),
+//     // Hash(String),
+//     // Bundle { ... },
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 // AppWebsocket

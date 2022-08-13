@@ -180,6 +180,13 @@ impl Component for Model {
                 installed_app_id: input,
             }))
         };
+        let register_dna_handler = |input: String| {
+            Ok(Msg::AdminWsCmd(AdminWsCmd::RegisterDna {
+                path: input,
+                uid: None,
+                properties: None,
+            }))
+        };
         let attach_app_interface_handler = |input: String| {
             input
                 .parse()
@@ -219,8 +226,8 @@ impl Component for Model {
                 <br/>
                 { mk_nullary_button(AdminWsCmd::GenerateAgentPubKey) }
                 <br/>
-                // register_dna
-                // <br/>
+                { self.view_string_input(ctx.link(), register_dna_handler, "register_dna".into(), "register dna at what path?".into()) }
+                <br/>
                 // install_app_bundle
                 // <br/>
                 // install_app
