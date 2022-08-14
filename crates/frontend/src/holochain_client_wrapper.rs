@@ -356,3 +356,27 @@ fn parse_app_ws_cmd_response(val: JsValue, tag: String) -> AppWsCmdResponse {
         ),
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// ZomeCallable
+////////////////////////////////////////////////////////////////////////////////
+
+trait ZomeCallable {
+    type Input;
+    type Output;
+
+    const FN_NAME: str;
+
+    fn prep_input(i: Self::Input) -> JsValue
+    where
+        Self::Input: SerializeToJsObj,
+    {
+        i.serialize_to_js_obj()
+    }
+    fn parse_output(v: JsValue) -> Self::Output
+    where
+        Self::Output: DeserializeFromJsObj,
+    {
+        Self::Output::deserialize_from_js_obj(v)
+    }
+}
