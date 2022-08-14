@@ -25,6 +25,12 @@ trait SerializeToJsObj {
     fn serialize_to_js_obj(self) -> JsValue;
 }
 
+impl SerializeToJsObj for JsValue {
+    fn serialize_to_js_obj(self) -> JsValue {
+        self
+    }
+}
+
 impl SerializeToJsObj for u16 {
     fn serialize_to_js_obj(self) -> JsValue {
         self.into()
@@ -43,6 +49,16 @@ impl<T: SerializeToJsObj> SerializeToJsObj for Option<T> {
             None => JsValue::NULL,
             Some(v) => v.serialize_to_js_obj(),
         }
+    }
+}
+
+impl<A: SerializeToJsObj, B: SerializeToJsObj> SerializeToJsObj for (A, B) {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let (a, b) = self;
+        let val = Array::new();
+        let _ = val.push(&a.serialize_to_js_obj());
+        let _ = val.push(&b.serialize_to_js_obj());
+        val.dyn_into().expect("Array conversion to succeed")
     }
 }
 
@@ -75,6 +91,8 @@ impl SerializeToJsObj for AgentPk {
         val
     }
 }
+
+pub type CellId = (DnaHash, AgentPk);
 
 #[derive(Clone, Debug)]
 pub struct HashRoleProof {
@@ -122,6 +140,35 @@ impl SerializeToJsObj for HashRoleProof {
 //         self.into()
 //     }
 // }
+
+////////////////////////////////////////////////////////////////////////////////
+// DeserializeFromJsObj trait
+////////////////////////////////////////////////////////////////////////////////
+
+trait DeserializeFromJsObj {
+    fn deserialize_from_js_obj(_: JsValue) -> Self;
+}
+
+impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj> DeserializeFromJsObj for (A, B) {
+    fn deserialize_from_js_obj(v: JsValue) -> Self {
+        let arr: Array = v.dyn_into().expect("Array conversion to succeed");
+        let a = arr.at(0);
+        let b = arr.at(1);
+        (A::deserialize_from_js_obj(a), B::deserialize_from_js_obj(b))
+    }
+}
+
+impl DeserializeFromJsObj for AgentPk {
+    fn deserialize_from_js_obj(v: JsValue) -> Self {
+        Self(v)
+    }
+}
+
+impl DeserializeFromJsObj for DnaHash {
+    fn deserialize_from_js_obj(v: JsValue) -> Self {
+        Self(v)
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // AdminWebsocket
@@ -205,7 +252,7 @@ pub enum AdminWsCmdResponse {
     InstallApp(JsValue),
     UninstallApp(JsValue),
     ListDnas(JsValue),
-    ListCellIds(JsValue),
+    ListCellIds(CellId),
     ListActiveApps(JsValue),
     // RequestAgentInfo(JsValue),
     // AddAgentInfo(JsValue),
@@ -217,13 +264,15 @@ fn parse_admin_ws_cmd_response(val: JsValue, tag: String) -> AdminWsCmdResponse 
         "DisableApp" => AdminWsCmdResponse::DisableApp(val),
         // "DumpState" => AdminWsCmdResponse::DumpState(val),
         "EnableApp" => AdminWsCmdResponse::EnableApp(val),
-        "GenerateAgentPubKey" => AdminWsCmdResponse::GenerateAgentPubKey(AgentPk(val)),
-        "RegisterDna" => AdminWsCmdResponse::RegisterDna(DnaHash(val)),
+        "GenerateAgentPubKey" => {
+            AdminWsCmdResponse::GenerateAgentPubKey(AgentPk::deserialize_from_js_obj(val))
+        }
+        "RegisterDna" => AdminWsCmdResponse::RegisterDna(DnaHash::deserialize_from_js_obj(val)),
         // "InstallAppBundle" => AdminWsCmdResponse::InstallAppBundle(val),
         "InstallApp" => AdminWsCmdResponse::InstallApp(val),
         "UninstallApp" => AdminWsCmdResponse::UninstallApp(val),
         "ListDnas" => AdminWsCmdResponse::ListDnas(val),
-        "ListCellIds" => AdminWsCmdResponse::ListCellIds(val),
+        "ListCellIds" => AdminWsCmdResponse::ListCellIds(CellId::deserialize_from_js_obj(val)),
         "ListActiveApps" => AdminWsCmdResponse::ListActiveApps(val),
         // "RequestAgentInfo" => AdminWsCmdResponse::RequestAgentInfo(val),
         // "AddAgentInfo" => AdminWsCmdResponse::AddAgentInfo(val),
@@ -278,19 +327,29 @@ pub async fn connect_app_ws(url: String, timeout: Option<u32>) -> Result<AppWebs
 #[generate_call(AppWebsocket, AppWsCmd, AppWsCmdResponse, parse_app_ws_cmd_response)]
 #[derive(Clone, Debug)]
 pub enum AppWsCmd {
-    AppInfo { installed_app_id: String },
-    // CallZome { cell_id, zome_name, fn_name, payload, provenance, cap }
+    AppInfo {
+        installed_app_id: String,
+    },
+    CallZome {
+        cell_id: CellId,
+        zome_name: String,
+        fn_name: String,
+        payload: JsValue,
+        provenance: AgentPk,
+        cap: String,
+    },
 }
 
 #[derive(Clone, Debug)]
 pub enum AppWsCmdResponse {
     AppInfo(JsValue),
-    // CallZome(JsValue),
+    CallZome(JsValue),
 }
 
 fn parse_app_ws_cmd_response(val: JsValue, tag: String) -> AppWsCmdResponse {
     match tag.as_str() {
         "AppInfo" => AppWsCmdResponse::AppInfo(val),
+        "CallZome" => AppWsCmdResponse::CallZome(val),
         other => panic!(
             "parse_app_ws_cmd_response: impossible: received unknown tag: {}",
             other
