@@ -1,24 +1,3 @@
-== building
+== overview
 
-[source]
-----
-npm run fe:build
-----
-
-== serving
-
-[source]
-----
-miniserve -p 8080 .
-----
-
-then browse http://localhost:8080/index.html
-
-== building JS / blob-ifying it
-
-[source]
-----
-npm install ./submodules/holochain-client-js
-
-npm run fe:hc-js-build
-----
+this is an experimental repo which uses Rust to build UIs for Holochain, and features a `wasm-bindgen` FFI binding library to the https://github.com/holochain/holochain-client-js[holochain-client-js] library.

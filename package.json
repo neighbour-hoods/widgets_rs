@@ -5,8 +5,8 @@
   },
   "scripts": {
     "setup": "npm install && npm install ./submodules/holochain-client-js",
-    "serve": "miniserve -p 8080 .",
-    "fe:build": "wasm-pack build ./crates/holochain_client_wrapper_ui --target web --out-dir=../../pkg && ./node_modules/.bin/esbuild ./main.js --format=iife --bundle --outfile=./pkg/bundle.js",
-    "fe:hc-js-build": "node esbuild.config.js"
+    "serve": "miniserve -p 8080 ./crates/holochain_client_wrapper_ui",
+    "hcw_ui:build": "wasm-pack build ./crates/holochain_client_wrapper_ui --target web && ./node_modules/.bin/esbuild ./crates/holochain_client_wrapper_ui/main.js --format=iife --bundle --outfile=./crates/holochain_client_wrapper_ui/pkg/bundle.js",
+    "hc-js-build": "node ./crates/holochain_client_wrapper/esbuild.config.js"
   }
 }
