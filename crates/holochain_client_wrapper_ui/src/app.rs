@@ -3,18 +3,14 @@ use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
 
-use crate::{
-    holochain_client_wrapper::{
-        connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse,
-        AppWebsocket, AppWsCmd, AppWsCmdResponse,
-    },
-    myclass::MyClass,
+use holochain_client_wrapper::{
+    connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
+    AppWsCmd, AppWsCmdResponse,
 };
 
 pub enum Msg {
     AddOne,
     SubOne,
-    SetNumber(u32),
     // AdminWs
     AdminWsConnected(AdminWebsocket),
     AdminWsError(String),
@@ -35,7 +31,6 @@ pub enum WsState<WS> {
 
 pub struct Model {
     value: i64,
-    myclass: MyClass,
     admin_ws: WsState<AdminWebsocket>,
     app_ws: WsState<AppWebsocket>,
 }
@@ -59,7 +54,6 @@ impl Component for Model {
         });
         Self {
             value: 0,
-            myclass: MyClass::new(),
             admin_ws: WsState::Absent("".into()),
             app_ws: WsState::Absent("".into()),
         }
@@ -77,10 +71,6 @@ impl Component for Model {
                 self.value -= 1;
                 // the value has changed so we need to
                 // re-render for it to appear on the page
-                true
-            }
-            Msg::SetNumber(n) => {
-                self.myclass.set_number(n);
                 true
             }
             Msg::AdminWsConnected(ws) => {
@@ -210,8 +200,6 @@ impl Component for Model {
                 <button onclick={ctx.link().callback(|_| Msg::SubOne)}>{ "-1" }</button>
                 <p>{ self.value }</p>
                 <br/>
-                <button onclick={ctx.link().callback(|_| Msg::SetNumber(0))}>{ "set number" }</button>
-                <p>{self.myclass.render()}</p>
 
                 <p>{format!("admin_ws: {:?}", self.admin_ws)}</p>
                 <p>{format!("{:?}", ws_debug)}</p>
