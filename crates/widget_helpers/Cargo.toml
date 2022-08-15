@@ -1,0 +1,14 @@
+[package]
+name = "widget_helpers"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+weblog = "0.3.0"
+yew = "0.19.3"
+
+holochain_client_wrapper = { path = "../holochain_client_wrapper" }
