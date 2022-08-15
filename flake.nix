@@ -1,40 +1,35 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/master";
-    flake-utils.url = "github:numtide/flake-utils";
-    flake-compat = {
-      url = "github:edolstra/flake-compat";
-      flake = false;
-    };
-    rust-overlay.url = "github:oxalica/rust-overlay";
+    nh-nix-env.url = "github:neighbour-hoods/nh-nix-env";
+    social_sensemaker.url = "github:neighbour-hoods/social_sensemaker";
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs = { nh-nix-env, social_sensemaker, ... }:
+    let
+      flake-utils = nh-nix-env.metavalues.flake-utils;
+      nh-supported-systems = nh-nix-env.metavalues.nh-supported-systems;
+      rustVersion = nh-nix-env.metavalues.rustVersion;
+      naersk = nh-nix-env.metavalues.naersk;
+      wasmTarget = nh-nix-env.metavalues.wasmTarget;
+      holonixMain = nh-nix-env.metavalues.holonixMain;
+    in
+    flake-utils.lib.eachSystem nh-supported-systems (system:
       let
-        rustVersion = "1.62.1";
-        wasmTarget = "wasm32-unknown-unknown";
-        #
-        overlays = [
-          (import rust-overlay)
-        ];
-        pkgs = import nixpkgs {
-          inherit system overlays;
-        };
+        pkgs = nh-nix-env.values.${system}.pkgs;
       in
+
       {
-        devShell =
-          pkgs.mkShell {
-            buildInputs = with pkgs; [
-              (rust-bin.stable.${rustVersion}.default.override {
-                targets = [ wasmTarget ];
-              })
-              miniserve
-              nodejs
-              openssl
-              pkgconfig
-              wasm-pack
-            ];
-          };
+        devShell = nh-nix-env.shells.${system}.holochainDevShell {
+          extraBuildInputs = with pkgs; [
+            nodejs
+            nodePackages.webpack
+            nodePackages.webpack-cli
+            openssl
+            pkgconfig
+            wasm-pack
+          ];
+        };
+
+        packages.social_sensemaker = social_sensemaker.packages.${system}.social_sensemaker-naersk;
       });
 }

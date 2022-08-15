@@ -3,5 +3,13 @@ pkg/
 node_modules/
 
 .direnv/
+result*
 
 crates/holochain_client_wrapper/src/holochain_client_wrapper.js
+
+# holochain
+happs/**/*.dna
+happs/**/*.happ
+happs/**/*.wasm
+.hc
+.hc_live_*

@@ -1,0 +1,8 @@
+manifest_version: "1"
+name: "paperz"
+uuid: ""
+properties: null
+zomes:
+  - name: paperz_main_zome
+    bundled: "./paperz.wasm"
+    #    properties:
