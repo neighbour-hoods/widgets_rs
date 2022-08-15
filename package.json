@@ -15,7 +15,7 @@
     "paperz:build": "cargo build -p paperz --release --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/paperz.wasm ./happs/paperz",
     "paperz:pack": "hc dna pack happs/paperz && hc app pack happs/paperz",
     "paperz:run": "hc sandbox generate happs/paperz && WASM_LOG=debug RUST_LOG=error RUST_BACKTRACE=full hc sandbox -f=9000 run -l -p 9999",
-    "paperz:redo": "npm run hc:build && npm run hc:pack && npm run hc:run",
+    "paperz:redo": "npm run paperz:build && npm run paperz:pack && npm run paperz:run",
     "hc:mk-sensemaker": "nix build .#social_sensemaker --impure",
     "hc:pg": "npx @holochain-playground/cli ws://localhost:9000"
   }
