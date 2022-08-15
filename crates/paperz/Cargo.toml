@@ -8,6 +8,7 @@ license = "MIT"
 [dependencies]
 hdk = "0.0.136"
 serde = "1"
+chrono = "=0.4.6"
 
 # common = { path = "../../../social_sensemaker/crates/common" }
 common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "403d97ef84ee718ef855f36e1c63feab491915f5" }
