@@ -5,15 +5,17 @@
   },
   "scripts": {
     "setup": "npm install && npm install ./submodules/holochain-client-js",
-    "serve": "miniserve -p 8080 ./crates/holochain_client_wrapper_ui",
+    "hcw_ui:serve": "miniserve -p 8080 ./crates/holochain_client_wrapper_ui",
     "hcw_ui:build": "wasm-pack build ./crates/holochain_client_wrapper_ui --target web && ./node_modules/.bin/esbuild ./crates/holochain_client_wrapper_ui/main.js --format=iife --bundle --outfile=./crates/holochain_client_wrapper_ui/pkg/bundle.js",
     "hc-js-build": "node ./crates/holochain_client_wrapper/esbuild.config.js",
 
     "hc:clean": "rm -rf .hc*",
-    "hc:build": "cargo build -p paperz --release --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/paperz.wasm ./happs/paperz",
-    "hc:pack": "hc dna pack happs/paperz && hc app pack happs/paperz",
-    "hc:run": "hc sandbox generate happs/paperz && WASM_LOG=debug RUST_LOG=error RUST_BACKTRACE=full hc sandbox -f=9000 run -l -p 9999",
-    "hc:redo": "npm run hc:build && npm run hc:pack && npm run hc:run",
+    "paperz_ui:serve": "miniserve -p 8080 ./crates/paperz_ui",
+    "paperz_ui:build": "wasm-pack build ./crates/paperz_ui --target web && ./node_modules/.bin/esbuild ./crates/paperz_ui/main.js --format=iife --bundle --outfile=./crates/paperz_ui/pkg/bundle.js",
+    "paperz:build": "cargo build -p paperz --release --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/paperz.wasm ./happs/paperz",
+    "paperz:pack": "hc dna pack happs/paperz && hc app pack happs/paperz",
+    "paperz:run": "hc sandbox generate happs/paperz && WASM_LOG=debug RUST_LOG=error RUST_BACKTRACE=full hc sandbox -f=9000 run -l -p 9999",
+    "paperz:redo": "npm run hc:build && npm run hc:pack && npm run hc:run",
     "hc:mk-sensemaker": "nix build .#social_sensemaker --impure",
     "hc:pg": "npx @holochain-playground/cli ws://localhost:9000"
   }

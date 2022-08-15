@@ -4,6 +4,15 @@
 
 this is an experimental repo which uses Rust to build UIs for Holochain, and features a `wasm-bindgen` FFI binding library to the https://github.com/holochain/holochain-client-js[holochain-client-js] library.
 
+== initial repo setup
+
+=== init submodules
+
+[source]
+----
+git submodule update --init
+----
+
 == Nix setup
 
 install a https://nixos.wiki/wiki/Flakes#Installing_flakes[Flakes] supporting https://nixos.org/download.html[`nix`]

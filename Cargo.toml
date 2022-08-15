@@ -4,4 +4,5 @@ members = [
   "crates/holochain_client_wrapper_ui",
   "crates/macros",
   "crates/paperz",
+  "crates/paperz_ui",
 ]
