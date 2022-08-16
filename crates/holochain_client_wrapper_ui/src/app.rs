@@ -61,7 +61,8 @@ impl Component for Model {
             }
 
             Msg::AdminWs(ws_msg) => {
-                let (render_status, opt_cmd) = handle_update(&mut self.admin_ws, ws_msg);
+                let (render_status, _ws_set_to_present, opt_cmd) =
+                    handle_update(&mut self.admin_ws, ws_msg);
                 let render_status_ = match opt_cmd {
                     None => render_status,
                     Some(cmd) => {
@@ -84,7 +85,8 @@ impl Component for Model {
             }
 
             Msg::AppWs(ws_msg) => {
-                let (render_status, opt_cmd) = handle_update(&mut self.app_ws, ws_msg);
+                let (render_status, _ws_set_to_present, opt_cmd) =
+                    handle_update(&mut self.app_ws, ws_msg);
                 let render_status_ = match opt_cmd {
                     None => render_status,
                     Some(cmd) => {
