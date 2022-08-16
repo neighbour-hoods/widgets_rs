@@ -14,6 +14,7 @@ chrono = "=0.4.6"
 common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "403d97ef84ee718ef855f36e1c63feab491915f5" }
 rep_lang_core = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
 rep_lang_runtime = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
+paperz_core = { path = "../paperz_core" }
 
 [lib]
 path = "src/lib.rs"

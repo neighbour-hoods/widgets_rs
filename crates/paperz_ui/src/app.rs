@@ -7,6 +7,7 @@ use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
     AppWsCmd, AppWsCmdResponse, CellId, HashRoleProof,
 };
+use paperz_core::types::*;
 use widget_helpers::{handle_update, WsMsg, WsState};
 
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
@@ -24,6 +25,7 @@ pub struct Model {
     admin_ws: WsState<AdminWebsocket>,
     app_ws: WsState<AppWebsocket>,
     paperz_cell_id: Option<CellId>,
+    paperz: Vec<Paper>,
 }
 
 impl Component for Model {
@@ -47,6 +49,7 @@ impl Component for Model {
             admin_ws: WsState::Absent("".into()),
             app_ws: WsState::Absent("".into()),
             paperz_cell_id: None,
+            paperz: Vec::new(),
         }
     }
 

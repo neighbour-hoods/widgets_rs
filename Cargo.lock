@@ -664,8 +664,18 @@ dependencies = [
  "chrono",
  "common",
  "hdk",
+ "paperz_core",
  "rep_lang_core",
  "rep_lang_runtime",
+ "serde",
+]
+
+[[package]]
+name = "paperz_core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hdk",
  "serde",
 ]
 
@@ -674,6 +684,7 @@ name = "paperz_ui"
 version = "0.1.0"
 dependencies = [
  "holochain_client_wrapper",
+ "paperz_core",
  "wasm-bindgen",
  "web-sys",
  "weblog",
