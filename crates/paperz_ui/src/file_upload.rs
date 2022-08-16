@@ -5,9 +5,8 @@ use gloo::file::callbacks::FileReader;
 use gloo::file::File;
 use std::collections::HashMap;
 use web_sys::{Event, HtmlInputElement};
-use weblog::console_log;
 use yew::html::TargetCast;
-use yew::{html, Component, Context, Html};
+use yew::{html, Callback, Component, Context, Html, Properties};
 
 use paperz_core::types::Paper;
 
@@ -20,9 +19,14 @@ pub struct FileUploadApp {
     readers: HashMap<String, FileReader>,
 }
 
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub on_paper_upload: Callback<Paper>,
+}
+
 impl Component for FileUploadApp {
     type Message = Msg;
-    type Properties = ();
+    type Properties = Props;
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
@@ -33,9 +37,9 @@ impl Component for FileUploadApp {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Loaded(paper) => {
-                console_log!(format!("paper: {:?}", paper));
                 self.readers.remove(&paper.filename);
-                true
+                ctx.props().on_paper_upload.emit(paper);
+                false
             }
             Msg::Files(files) => {
                 for file in files.into_iter() {
@@ -53,7 +57,7 @@ impl Component for FileUploadApp {
                     };
                     self.readers.insert(filename, task);
                 }
-                true
+                false
             }
         }
     }

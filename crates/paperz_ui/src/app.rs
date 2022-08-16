@@ -22,6 +22,7 @@ pub enum Msg {
     Error(String),
     SensemakerEnabled(bool),
     ZomeCallResponse(ZomeCallResponse),
+    UploadedPaper(Paper),
 }
 
 pub enum ZomeCallResponse {
@@ -267,15 +268,28 @@ impl Component for Model {
                 console_log!("got paper_vec");
                 true
             }
+
+            Msg::UploadedPaper(paper) => {
+                console_log!(format!("paper: {:?}", paper));
+                // self.paperz.push(paper) // types are wrong - we need an EntryHash
+                true
+            }
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let on_paper_upload: Callback<Paper> = {
+            let link = ctx.link().clone();
+            Callback::from(move |paper: Paper| {
+                link.send_future(async { Msg::UploadedPaper(paper) })
+            })
+        };
+
         html! {
             <div>
                 <p>{"hello, paperz 👋"}</p>
                 <br/>
-                <FileUploadApp />
+                <FileUploadApp {on_paper_upload} />
                 <br/>
                 <h3 class="subtitle">{"paperz"}</h3>
                 { for self.paperz.iter().map(|paper| html!{ <iframe src={paper.1.blob_str.clone()} width="100%" height="500px" /> }) }
