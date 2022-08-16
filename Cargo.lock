@@ -399,6 +399,7 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "weblog",
+ "widget_helpers",
  "yew",
 ]
 
@@ -676,6 +677,7 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "weblog",
+ "widget_helpers",
  "yew",
 ]
 

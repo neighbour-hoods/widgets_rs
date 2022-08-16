@@ -12,6 +12,7 @@ weblog = "0.3.0"
 yew = "0.19.3"
 
 holochain_client_wrapper = { path = "../holochain_client_wrapper" }
+widget_helpers = { path = "../widget_helpers" }
 
 [dependencies.web-sys]
 version = "0.3"
