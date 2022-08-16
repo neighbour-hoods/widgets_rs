@@ -5,7 +5,8 @@ use yew::{html::Scope, prelude::*};
 
 use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
-    AppWsCmd, AppWsCmdResponse, CellId, DeserializeFromJsObj, EntryHashRaw, HashRoleProof,
+    AppWsCmd, AppWsCmdResponse, CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
+    HashRoleProof, SerializeToJsObj,
 };
 use paperz_core::types::{Paper, PaperEhVec};
 use widget_helpers::{handle_update, WsMsg, WsState};
@@ -22,11 +23,12 @@ pub enum Msg {
     Error(String),
     SensemakerEnabled(bool),
     ZomeCallResponse(ZomeCallResponse),
-    UploadedPaper(Paper),
+    BrowserUploadedPaper(Paper),
 }
 
 pub enum ZomeCallResponse {
     Papers(Vec<(EntryHashRaw, Paper)>),
+    UploadPaper(EntryHashRaw, Paper),
 }
 
 pub struct Model {
@@ -269,9 +271,48 @@ impl Component for Model {
                 true
             }
 
-            Msg::UploadedPaper(paper) => {
+            Msg::ZomeCallResponse(ZomeCallResponse::UploadPaper(paper_eh, paper)) => {
+                self.paperz.push((paper_eh, paper));
+                true
+            }
+
+            Msg::BrowserUploadedPaper(paper) => {
                 console_log!(format!("paper: {:?}", paper));
-                // self.paperz.push(paper) // types are wrong - we need an EntryHash
+
+                match self.app_ws.clone() {
+                    WsState::Absent(err) => {
+                        console_error!(format!("WsState::Absent: {}", err));
+                    }
+                    WsState::Present(ws) => match self.paperz_cell_id.clone() {
+                        None => {
+                            console_error!("paperz_cell_id is None");
+                        }
+                        Some(cell_id) => ctx.link().send_future(async move {
+                            let cmd = AppWsCmd::CallZome {
+                                cell_id: cell_id.clone(),
+                                zome_name: PAPERZ_ZOME_NAME.into(),
+                                fn_name: "upload_paper".into(),
+                                payload: paper.clone().serialize_to_js_obj(),
+                                provenance: cell_id.1.clone(),
+                                cap: "".into(),
+                            };
+                            let resp = ws.call(cmd).await;
+                            match resp {
+                                Ok(AppWsCmdResponse::CallZome(val)) => {
+                                    let (paper_eh, _paper_hh) =
+                                        EntryHeaderHashPairRaw::deserialize_from_js_obj(val);
+                                    Msg::ZomeCallResponse(ZomeCallResponse::UploadPaper(
+                                        paper_eh, paper,
+                                    ))
+                                }
+                                Ok(resp) => {
+                                    Msg::Error(format!("impossible: invalid response: {:?}", resp))
+                                }
+                                Err(err) => Msg::Error(format!("err: {:?}", err)),
+                            }
+                        }),
+                    },
+                };
                 true
             }
         }
@@ -281,7 +322,7 @@ impl Component for Model {
         let on_paper_upload: Callback<Paper> = {
             let link = ctx.link().clone();
             Callback::from(move |paper: Paper| {
-                link.send_future(async { Msg::UploadedPaper(paper) })
+                link.send_future(async { Msg::BrowserUploadedPaper(paper) })
             })
         };
 

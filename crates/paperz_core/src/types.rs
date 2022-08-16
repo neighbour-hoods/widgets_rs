@@ -1,17 +1,38 @@
 use hdk::prelude::*;
-use js_sys::Reflect;
-use wasm_bindgen::prelude::*;
+use js_sys::{Object, Reflect};
+use wasm_bindgen::{prelude::*, JsCast};
 
-use holochain_client_wrapper::{DeserializeFromJsObj, EntryHashRaw};
+use holochain_client_wrapper::{DeserializeFromJsObj, EntryHashRaw, SerializeToJsObj};
 
 pub type PaperEhVec = Vec<(EntryHashRaw, Paper)>;
 
 #[hdk_entry]
+#[derive(Clone)]
 pub struct Paper {
     // must include extension
     pub filename: String,
     // encoded file bytes payload
     pub blob_str: String,
+}
+
+impl SerializeToJsObj for Paper {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let ret = move || -> Result<JsValue, JsValue> {
+            let val: JsValue = Object::new().dyn_into()?;
+            assert!(Reflect::set(
+                &val,
+                &JsValue::from_str("filename"),
+                &self.filename.serialize_to_js_obj(),
+            )?);
+            assert!(Reflect::set(
+                &val,
+                &JsValue::from_str("blob_str"),
+                &self.blob_str.serialize_to_js_obj(),
+            )?);
+            Ok(val)
+        };
+        ret().expect("operations to succeed")
+    }
 }
 
 impl DeserializeFromJsObj for Paper {

@@ -26,7 +26,7 @@ fn paper_anchor() -> ExternResult<EntryHash> {
 }
 
 #[hdk_extern]
-fn upload_paper(paper: Paper) -> ExternResult<HeaderHash> {
+fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
     debug!(
         "upload_paper: received input of length {}",
         paper.blob_str.len()
@@ -36,12 +36,12 @@ fn upload_paper(paper: Paper) -> ExternResult<HeaderHash> {
     let paper_eh = hash_entry(&paper)?;
     create_link(
         paper_anchor()?,
-        paper_eh,
+        paper_eh.clone(),
         LinkType(0),
         LinkTag::new(PAPER_TAG),
     )?;
 
-    Ok(paper_hh)
+    Ok((paper_eh, paper_hh))
 }
 
 #[hdk_extern]
