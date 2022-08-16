@@ -136,64 +136,59 @@ impl Component for Model {
                     }
                     WsState::Present(ws) => {
                         ctx.link().send_future(async move {
-                            match ws.call(AdminWsCmd::ListCellIds).await {
-                                Ok(AdminWsCmdResponse::ListCellIds(cell_ids)) => {
-                                    if cell_ids.len() == 1 {
-                                        let cmd = AdminWsCmd::RegisterDna {
-                                            path: "../social_sensemaker/happs/social_sensemaker/social_sensemaker.dna".into(),
-                                            uid: None,
-                                            properties: None,
-                                        };
-                                        match ws.call(cmd).await {
-                                            Ok(AdminWsCmdResponse::RegisterDna(dna_hash)) => {
-                                                let installed_app_id: String = "sensemaker".into();
-                                                let cmd = AdminWsCmd::InstallApp {
-                                                    installed_app_id: installed_app_id.clone(),
-                                                    agent_key: cell_id.1,
-                                                    dnas: vec![
-                                                        HashRoleProof {
-                                                            hash: dna_hash,
-                                                            role_id: "thedna".into(),
-                                                            membrane_proof: None,
-                                                        }
-                                                    ],
-                                                };
-                                                match ws.call(cmd).await {
-                                                    Ok(AdminWsCmdResponse::InstallApp(install_app)) => {
-                                                        console_log!(format!("install_app: {:?}", install_app));
-                                                        let cmd = AdminWsCmd::EnableApp {
-                                                            installed_app_id,
-                                                        };
-                                                        match ws.call(cmd).await {
-                                                            Ok(AdminWsCmdResponse::EnableApp(enable_app)) => {
-                                                                console_log!(format!("enable_app: {:?}", enable_app));
-                                                                Msg::SensemakerEnabled
-                                                            }
-                                                            Ok(resp) =>
-                                                                Msg::Error(format!("impossible: invalid response: {:?}", resp)),
-                                                            Err(err) =>
-                                                                Msg::Error(format!("err: {:?}", err)),
-                                                        }
-                                                    }
-                                                    Ok(resp) =>
-                                                        Msg::Error(format!("impossible: invalid response: {:?}", resp)),
-                                                    Err(err) =>
-                                                        Msg::Error(format!("err: {:?}", err)),
-                                                }
+                            let ret = async {
+                                let cell_ids = match ws.call(AdminWsCmd::ListCellIds).await {
+                                    Ok(AdminWsCmdResponse::ListCellIds(x)) => Ok(x),
+                                    Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
+                                    Err(err) => Err(format!("err: {:?}", err)),
+                                }?;
+
+                                if cell_ids.len() == 1 {
+                                    let cmd = AdminWsCmd::RegisterDna {
+                                        path: "../social_sensemaker/happs/social_sensemaker/social_sensemaker.dna".into(),
+                                        uid: None,
+                                        properties: None,
+                                    };
+                                    let dna_hash = match ws.call(cmd).await {
+                                        Ok(AdminWsCmdResponse::RegisterDna(x)) => Ok(x),
+                                        Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
+                                        Err(err) => Err(format!("err: {:?}", err)),
+                                    }?;
+                                    let installed_app_id: String = "sensemaker".into();
+                                    let cmd = AdminWsCmd::InstallApp {
+                                        installed_app_id: installed_app_id.clone(),
+                                        agent_key: cell_id.1,
+                                        dnas: vec![
+                                            HashRoleProof {
+                                                hash: dna_hash,
+                                                role_id: "thedna".into(),
+                                                membrane_proof: None,
                                             }
-                                            Ok(resp) =>
-                                                Msg::Error(format!("impossible: invalid response: {:?}", resp)),
-                                            Err(err) =>
-                                                Msg::Error(format!("err: {:?}", err)),
-                                        }
-                                    } else {
-                                        Msg::Info("cell_ids.len() != 1".into())
-                                    }
+                                        ],
+                                    };
+                                    let install_app = match ws.call(cmd).await {
+                                        Ok(AdminWsCmdResponse::InstallApp(x)) => Ok(x),
+                                        Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
+                                        Err(err) => Err(format!("err: {:?}", err)),
+                                    }?;
+                                    console_log!(format!("install_app: {:?}", install_app));
+                                    let cmd = AdminWsCmd::EnableApp {
+                                        installed_app_id,
+                                    };
+                                    let enable_app = match ws.call(cmd).await {
+                                        Ok(AdminWsCmdResponse::EnableApp(x)) => Ok(x),
+                                        Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
+                                        Err(err) => Err(format!("err: {:?}", err)),
+                                    }?;
+                                    console_log!(format!("enable_app: {:?}", enable_app));
+                                    Ok(Msg::SensemakerEnabled)
+                                } else {
+                                    Ok(Msg::Info("cell_ids.len() != 1".into()))
                                 }
-                                Ok(resp) =>
-                                    Msg::Error(format!("impossible: invalid response: {:?}", resp)),
-                                Err(err) =>
-                                    Msg::Error(format!("err: {:?}", err)),
+                            };
+                            match ret.await {
+                                Err(err) => Msg::Error(err),
+                                Ok(msg) => msg
                             }
                         });
                     }
