@@ -10,6 +10,8 @@ use holochain_client_wrapper::{
 use paperz_core::types::{Paper, PaperEhVec};
 use widget_helpers::{handle_update, WsMsg, WsState};
 
+use crate::file_upload::FileUploadApp;
+
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
 
 pub enum Msg {
@@ -272,6 +274,10 @@ impl Component for Model {
         html! {
             <div>
                 <p>{"hello, paperz 👋"}</p>
+                <br/>
+                <FileUploadApp />
+                <br/>
+                <h3 class="subtitle">{"paperz"}</h3>
                 { for self.paperz.iter().map(|paper| html!{ <iframe src={paper.1.blob_str.clone()} width="100%" height="500px" /> }) }
             </div>
         }
