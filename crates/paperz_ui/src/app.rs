@@ -5,9 +5,9 @@ use yew::{html::Scope, prelude::*};
 
 use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
-    AppWsCmd, AppWsCmdResponse, CellId, HashRoleProof,
+    AppWsCmd, AppWsCmdResponse, CellId, DeserializeFromJsObj, EntryHashRaw, HashRoleProof,
 };
-use paperz_core::types::*;
+use paperz_core::types::{Paper, PaperEhVec};
 use widget_helpers::{handle_update, WsMsg, WsState};
 
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
@@ -19,13 +19,18 @@ pub enum Msg {
     Log(String),
     Error(String),
     SensemakerEnabled(bool),
+    ZomeCallResponse(ZomeCallResponse),
+}
+
+pub enum ZomeCallResponse {
+    Papers(Vec<(EntryHashRaw, Paper)>),
 }
 
 pub struct Model {
     admin_ws: WsState<AdminWebsocket>,
     app_ws: WsState<AppWebsocket>,
     paperz_cell_id: Option<CellId>,
-    paperz: Vec<Paper>,
+    paperz: Vec<(EntryHashRaw, Paper)>,
 }
 
 impl Component for Model {
@@ -237,12 +242,28 @@ impl Component for Model {
                                 cap: "".into(),
                             };
                             let resp = ws.call(cmd).await;
-                            Msg::Log(format!("zome call resp: {:?}", resp))
+                            match resp {
+                                Ok(AppWsCmdResponse::CallZome(val)) => {
+                                    Msg::ZomeCallResponse(ZomeCallResponse::Papers(
+                                        PaperEhVec::deserialize_from_js_obj(val),
+                                    ))
+                                }
+                                Ok(resp) => {
+                                    Msg::Error(format!("impossible: invalid response: {:?}", resp))
+                                }
+                                Err(err) => Msg::Error(format!("err: {:?}", err)),
+                            }
                         }),
                     },
                 };
 
                 false
+            }
+
+            Msg::ZomeCallResponse(ZomeCallResponse::Papers(paper_vec)) => {
+                self.paperz = paper_vec;
+                console_log!("got paper_vec");
+                true
             }
         }
     }
@@ -251,6 +272,7 @@ impl Component for Model {
         html! {
             <div>
                 <p>{"hello, paperz 👋"}</p>
+                { for self.paperz.iter().map(|paper| html!{ <iframe src={paper.1.blob_str.clone()} width="100%" height="500px" /> }) }
             </div>
         }
     }

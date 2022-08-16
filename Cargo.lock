@@ -676,7 +676,10 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "hdk",
+ "holochain_client_wrapper",
+ "js-sys",
  "serde",
+ "wasm-bindgen",
 ]
 
 [[package]]
