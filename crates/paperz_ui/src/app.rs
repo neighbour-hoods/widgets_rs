@@ -1,3 +1,4 @@
+use wasm_bindgen::prelude::*;
 use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
@@ -8,10 +9,13 @@ use holochain_client_wrapper::{
 };
 use widget_helpers::{handle_update, WsMsg, WsState};
 
+const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
+
 pub enum Msg {
     AdminWs(WsMsg<AdminWebsocket, AdminWsCmd, AdminWsCmdResponse>),
     AppWs(WsMsg<AppWebsocket, AppWsCmd, AppWsCmdResponse>),
     PaperzCellId(CellId),
+    Log(String),
     Error(String),
     SensemakerEnabled(bool),
 }
@@ -201,11 +205,40 @@ impl Component for Model {
                 false
             }
 
+            Msg::Log(err) => {
+                console_log!("Log: {}", err);
+                false
+            }
+
             Msg::SensemakerEnabled(just_enabled) => {
                 console_log!(format!(
                     "sensemaker enabled. just_enabled: {}",
                     just_enabled
                 ));
+
+                match self.app_ws.clone() {
+                    WsState::Absent(err) => {
+                        console_error!(format!("WsState::Absent: {}", err));
+                    }
+                    WsState::Present(ws) => match self.paperz_cell_id.clone() {
+                        None => {
+                            console_error!("paperz_cell_id is None");
+                        }
+                        Some(cell_id) => ctx.link().send_future(async move {
+                            let cmd = AppWsCmd::CallZome {
+                                cell_id: cell_id.clone(),
+                                zome_name: PAPERZ_ZOME_NAME.into(),
+                                fn_name: "get_all_paperz".into(),
+                                payload: JsValue::NULL,
+                                provenance: cell_id.1.clone(),
+                                cap: "".into(),
+                            };
+                            let resp = ws.call(cmd).await;
+                            Msg::Log(format!("zome call resp: {:?}", resp))
+                        }),
+                    },
+                };
+
                 false
             }
         }
