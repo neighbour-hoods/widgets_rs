@@ -247,88 +247,10 @@ impl Component for Model {
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let ws_debug: String = match &self.admin_ws {
-            WsState::Absent(_err) => "admin_ws absent".into(),
-            WsState::Present(ws) => format!("typeof: {:?}", ws.js_ws.js_typeof(),),
-        };
-        let enable_app_handler = |input: String| {
-            Ok(Msg::AdminWs(WsMsg::Cmd(AdminWsCmd::EnableApp {
-                installed_app_id: input,
-            })))
-        };
-        let disable_app_handler = |input: String| {
-            Ok(Msg::AdminWs(WsMsg::Cmd(AdminWsCmd::DisableApp {
-                installed_app_id: input,
-            })))
-        };
-        let uninstall_app_handler = |input: String| {
-            Ok(Msg::AdminWs(WsMsg::Cmd(AdminWsCmd::UninstallApp {
-                installed_app_id: input,
-            })))
-        };
-        let register_dna_handler = |input: String| {
-            Ok(Msg::AdminWs(WsMsg::Cmd(AdminWsCmd::RegisterDna {
-                path: input,
-                uid: None,
-                properties: None,
-            })))
-        };
-        let attach_app_interface_handler = |input: String| {
-            input
-                .parse()
-                .map(|port| Msg::AdminWs(WsMsg::Cmd(AdminWsCmd::AttachAppInterface { port })))
-                .map_err(|err| format!("attach_app_interface_handler: {}", err))
-        };
-        let mk_nullary_button = |msg: AdminWsCmd| {
-            let msg_ = msg.clone();
-            html! {
-                <button onclick={ctx.link().callback(move |_| Msg::AdminWs(WsMsg::Cmd(msg.clone())))}>{ format!("{:?}", msg_) }</button>
-            }
-        };
-        let app_info_handler = |input: String| {
-            Ok(Msg::AppWs(WsMsg::Cmd(AppWsCmd::AppInfo {
-                installed_app_id: input,
-            })))
-        };
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <div>
-                <p>{format!("admin_ws: {:?}", self.admin_ws)}</p>
-                <p>{format!("{:?}", ws_debug)}</p>
-
-                { self.view_string_input(ctx.link(), attach_app_interface_handler, "attach_app_interface".into(), "desired app port?".into()) }
-                <br/>
-                { self.view_string_input(ctx.link(), disable_app_handler, "disable_app".into(), "disable which app?".into()) }
-                <br/>
-                // dump_state
-                // <br/>
-                { self.view_string_input(ctx.link(), enable_app_handler, "enable_app".into(), "enable which app?".into()) }
-                <br/>
-                { mk_nullary_button(AdminWsCmd::GenerateAgentPubKey) }
-                <br/>
-                { self.view_string_input(ctx.link(), register_dna_handler, "register_dna".into(), "register dna at what path?".into()) }
-                <br/>
-                // install_app_bundle
-                // <br/>
-                // install_app
-                // <br/>
-                { self.view_string_input(ctx.link(), uninstall_app_handler, "uninstall_app".into(), "uninstall which app?".into()) }
-                <br/>
-                { mk_nullary_button(AdminWsCmd::ListDnas) }
-                <br/>
-                { mk_nullary_button(AdminWsCmd::ListCellIds) }
-                <br/>
-                { mk_nullary_button(AdminWsCmd::ListActiveApps) }
-                // request_agent_info
-                // <br/>
-                // add_agent_info
-                // <br/>
-
-                <br/>
-                <br/>
-                <p>{format!("app_ws: {:?}", self.app_ws)}</p>
-                <br/>
-                { self.view_string_input(ctx.link(), app_info_handler, "app_info".into(), "app info for which app?".into()) }
+                <p>{"hello, paperz 👋"}</p>
             </div>
         }
     }
