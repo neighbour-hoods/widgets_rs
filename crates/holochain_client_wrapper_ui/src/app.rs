@@ -6,7 +6,7 @@ use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
     AppWsCmd, AppWsCmdResponse,
 };
-use widget_helpers::{WsMsg, WsState};
+use widget_helpers::{handle_update, WsMsg, WsState};
 
 pub enum Msg {
     AddOne,
@@ -59,80 +59,51 @@ impl Component for Model {
                 // re-render for it to appear on the page
                 true
             }
-            Msg::AdminWs(WsMsg::Connected(ws)) => {
-                self.admin_ws = WsState::Present(ws.clone());
-                console_log!("Holochain admin ws connected: {:?}", ws);
-                true
-            }
-            Msg::AdminWs(WsMsg::Error(err)) => {
-                self.admin_ws = WsState::Absent(err.clone());
-                console_error!(format!("AdminWsError: {}", err));
-                true
-            }
-            Msg::AdminWs(WsMsg::Cmd(cmd)) => {
-                let ws_clone = self.admin_ws.clone();
-                match ws_clone {
-                    WsState::Absent(err) => {
-                        console_error!(format!("AdminWsCmd - WsState::Absent: {}", err))
-                    }
-                    WsState::Present(ws) => {
-                        console_log!("AdminWsCmd w/ admin ws");
-                        ctx.link().send_future(async move {
-                            Msg::AdminWs(WsMsg::CmdResponse(ws.call(cmd).await))
-                        });
+
+            Msg::AdminWs(ws_msg) => {
+                let (render_status, opt_cmd) = handle_update(&mut self.admin_ws, ws_msg);
+                let render_status_ = match opt_cmd {
+                    None => render_status,
+                    Some(cmd) => {
+                        let ws_ref_clone = self.admin_ws.clone();
+                        match ws_ref_clone {
+                            WsState::Absent(err) => {
+                                console_error!(format!("AdminWsCmd - WsState::Absent: {}", err));
+                            }
+                            WsState::Present(ws) => {
+                                console_log!("AdminWsCmd w/ admin ws");
+                                ctx.link().send_future(async move {
+                                    Msg::AdminWs(WsMsg::CmdResponse(ws.call(cmd).await))
+                                })
+                            }
+                        };
+                        false
                     }
                 };
-                false
-            }
-            Msg::AdminWs(WsMsg::CmdResponse(resp)) => {
-                match resp {
-                    Ok(val) => {
-                        console_log!(format!("AdminWsCmdResponse: {:?}", val));
-                    }
-                    Err(err) => {
-                        console_error!(format!("AdminWsCmdResponse: error: {:?}", err));
-                    }
-                };
-                false
+                render_status_
             }
 
-            // AppWs
-            // TODO consider consolidating / deduplicating admin and app bits
-            Msg::AppWs(WsMsg::Connected(ws)) => {
-                self.app_ws = WsState::Present(ws.clone());
-                console_log!("Holochain app ws connected: {:?}", ws);
-                true
-            }
-            Msg::AppWs(WsMsg::Error(err)) => {
-                self.app_ws = WsState::Absent(err.clone());
-                console_error!(format!("AppWsError: {}", err));
-                true
-            }
-            Msg::AppWs(WsMsg::Cmd(cmd)) => {
-                let ws_clone = self.app_ws.clone();
-                match ws_clone {
-                    WsState::Absent(err) => {
-                        console_error!(format!("AppWsCmd - WsState::Absent: {}", err))
-                    }
-                    WsState::Present(ws) => {
-                        console_log!("AppWsCmd w/ app ws");
-                        ctx.link().send_future(async move {
-                            Msg::AppWs(WsMsg::CmdResponse(ws.call(cmd).await))
-                        });
+            Msg::AppWs(ws_msg) => {
+                let (render_status, opt_cmd) = handle_update(&mut self.app_ws, ws_msg);
+                let render_status_ = match opt_cmd {
+                    None => render_status,
+                    Some(cmd) => {
+                        let ws_ref_clone = self.app_ws.clone();
+                        match ws_ref_clone {
+                            WsState::Absent(err) => {
+                                console_error!(format!("AppWsCmd - WsState::Absent: {}", err));
+                            }
+                            WsState::Present(ws) => {
+                                console_log!("AppWsCmd w/ app ws");
+                                ctx.link().send_future(async move {
+                                    Msg::AppWs(WsMsg::CmdResponse(ws.call(cmd).await))
+                                })
+                            }
+                        };
+                        false
                     }
                 };
-                false
-            }
-            Msg::AppWs(WsMsg::CmdResponse(resp)) => {
-                match resp {
-                    Ok(val) => {
-                        console_log!(format!("AppWsCmdResponse: {:?}", val));
-                    }
-                    Err(err) => {
-                        console_error!(format!("AppWsCmdResponse: error: {:?}", err));
-                    }
-                };
-                false
+                render_status_
             }
         }
     }
