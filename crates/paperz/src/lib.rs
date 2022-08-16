@@ -6,7 +6,6 @@ use common::{
     sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
     OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG,
 };
-use paperz_core::types::{Annotation, Paper};
 
 pub const PAPER_TAG: &str = "paperz_paper";
 pub const ANN_TAG: &str = "annotationz";
@@ -20,6 +19,23 @@ entry_defs![
 ];
 
 sensemaker_cell_id_fns! {}
+
+#[hdk_entry]
+pub struct Paper {
+    // must include extension
+    pub filename: String,
+    // encoded file bytes payload
+    pub blob_str: String,
+}
+
+#[hdk_entry]
+pub struct Annotation {
+    pub paper_ref: EntryHash, // this should probably be a HeaderHash
+    pub page_num: u64,
+    pub paragraph_num: u64,
+    pub what_it_says: String,
+    pub what_it_should_say: String,
+}
 
 fn paper_anchor() -> ExternResult<EntryHash> {
     anchor("paperz".into(), "".into())

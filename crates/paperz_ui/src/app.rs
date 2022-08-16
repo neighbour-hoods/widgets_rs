@@ -7,7 +7,7 @@ use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
     AppWsCmd, AppWsCmdResponse, CellId, HashRoleProof,
 };
-use paperz_core::types::*;
+use paperz::Paper;
 use widget_helpers::{handle_update, WsMsg, WsState};
 
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
