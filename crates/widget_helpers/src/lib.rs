@@ -16,10 +16,12 @@ pub enum WsState<WS> {
 
 /// we cannot handle the `Cmd` case well b/c async traits are not well supported, and we would need
 /// that in order to consistently make the appropriate `call` on both App/AdminWebsockets.
+///
+/// returns `(render_status, ws_set_to_present, opt_cmd)`
 pub fn handle_update<WS, WSCMD, WSCMDRESP>(
     ws_ref: &mut WsState<WS>,
     msg: WsMsg<WS, WSCMD, WSCMDRESP>,
-) -> (bool, Option<WSCMD>)
+) -> (bool, bool, Option<WSCMD>)
 where
     WS: Clone,
     wasm_bindgen::JsValue: From<WS>,
@@ -29,14 +31,14 @@ where
         WsMsg::Connected(ws) => {
             *ws_ref = WsState::Present(ws.clone());
             console_log!("WsMsg::Connected: {:?}", ws);
-            (true, None)
+            (true, true, None)
         }
         WsMsg::Error(err) => {
             *ws_ref = WsState::Absent(err.clone());
             console_error!(format!("WsMsg::Error: {}", err));
-            (true, None)
+            (true, false, None)
         }
-        WsMsg::Cmd(cmd) => (false, Some(cmd)),
+        WsMsg::Cmd(cmd) => (false, false, Some(cmd)),
         WsMsg::CmdResponse(resp) => {
             match resp {
                 Ok(val) => {
@@ -46,7 +48,7 @@ where
                     console_error!(format!("WsMsg::CmdResponse: error: {:?}", err));
                 }
             };
-            (false, None)
+            (false, false, None)
         }
     }
 }

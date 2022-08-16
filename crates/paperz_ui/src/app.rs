@@ -4,18 +4,23 @@ use yew::{html::Scope, prelude::*};
 
 use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
-    AppWsCmd, AppWsCmdResponse,
+    AppWsCmd, AppWsCmdResponse, CellId, HashRoleProof,
 };
 use widget_helpers::{handle_update, WsMsg, WsState};
 
 pub enum Msg {
     AdminWs(WsMsg<AdminWebsocket, AdminWsCmd, AdminWsCmdResponse>),
     AppWs(WsMsg<AppWebsocket, AppWsCmd, AppWsCmdResponse>),
+    PaperzCellId(CellId),
+    Error(String),
+    Info(String),
+    SensemakerEnabled,
 }
 
 pub struct Model {
     admin_ws: WsState<AdminWebsocket>,
     app_ws: WsState<AppWebsocket>,
+    paperz_cell_id: Option<CellId>,
 }
 
 impl Component for Model {
@@ -38,13 +43,15 @@ impl Component for Model {
         Self {
             admin_ws: WsState::Absent("".into()),
             app_ws: WsState::Absent("".into()),
+            paperz_cell_id: None,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::AdminWs(ws_msg) => {
-                let (render_status, opt_cmd) = handle_update(&mut self.admin_ws, ws_msg);
+                let (render_status, _ws_set_to_present, opt_cmd) =
+                    handle_update(&mut self.admin_ws, ws_msg);
                 let render_status_ = match opt_cmd {
                     None => render_status,
                     Some(cmd) => {
@@ -63,11 +70,13 @@ impl Component for Model {
                         false
                     }
                 };
+
                 render_status_
             }
 
             Msg::AppWs(ws_msg) => {
-                let (render_status, opt_cmd) = handle_update(&mut self.app_ws, ws_msg);
+                let (render_status, ws_set_to_present, opt_cmd) =
+                    handle_update(&mut self.app_ws, ws_msg);
                 let render_status_ = match opt_cmd {
                     None => render_status,
                     Some(cmd) => {
@@ -86,7 +95,126 @@ impl Component for Model {
                         false
                     }
                 };
+
+                if ws_set_to_present {
+                    match self.app_ws.clone() {
+                        WsState::Absent(err) => {
+                            console_error!(format!("WsState::Absent: {}", err));
+                        }
+                        WsState::Present(ws) => {
+                            ctx.link().send_future(async move {
+                                match ws
+                                    .call(AppWsCmd::AppInfo {
+                                        installed_app_id: "test-app".into(),
+                                    })
+                                    .await
+                                {
+                                    Ok(AppWsCmdResponse::AppInfo(app_info)) => {
+                                        Msg::PaperzCellId(app_info.cell_data[0].cell_id.clone())
+                                    }
+                                    Ok(resp) => Msg::Error(format!(
+                                        "impossible: invalid response: {:?}",
+                                        resp
+                                    )),
+                                    Err(err) => Msg::Error(format!("err: {:?}", err)),
+                                }
+                            });
+                        }
+                    }
+                }
+
                 render_status_
+            }
+
+            Msg::PaperzCellId(cell_id) => {
+                self.paperz_cell_id = Some(cell_id.clone());
+                console_log!(format!("got cell_id: {:?}", cell_id));
+
+                match self.admin_ws.clone() {
+                    WsState::Absent(err) => {
+                        console_error!(format!("WsState::Absent: {}", err));
+                    }
+                    WsState::Present(ws) => {
+                        ctx.link().send_future(async move {
+                            match ws.call(AdminWsCmd::ListCellIds).await {
+                                Ok(AdminWsCmdResponse::ListCellIds(cell_ids)) => {
+                                    if cell_ids.len() == 1 {
+                                        let cmd = AdminWsCmd::RegisterDna {
+                                            path: "../social_sensemaker/happs/social_sensemaker/social_sensemaker.dna".into(),
+                                            uid: None,
+                                            properties: None,
+                                        };
+                                        match ws.call(cmd).await {
+                                            Ok(AdminWsCmdResponse::RegisterDna(dna_hash)) => {
+                                                let installed_app_id: String = "sensemaker".into();
+                                                let cmd = AdminWsCmd::InstallApp {
+                                                    installed_app_id: installed_app_id.clone(),
+                                                    agent_key: cell_id.1,
+                                                    dnas: vec![
+                                                        HashRoleProof {
+                                                            hash: dna_hash,
+                                                            role_id: "thedna".into(),
+                                                            membrane_proof: None,
+                                                        }
+                                                    ],
+                                                };
+                                                match ws.call(cmd).await {
+                                                    Ok(AdminWsCmdResponse::InstallApp(install_app)) => {
+                                                        console_log!(format!("install_app: {:?}", install_app));
+                                                        let cmd = AdminWsCmd::EnableApp {
+                                                            installed_app_id,
+                                                        };
+                                                        match ws.call(cmd).await {
+                                                            Ok(AdminWsCmdResponse::EnableApp(enable_app)) => {
+                                                                console_log!(format!("enable_app: {:?}", enable_app));
+                                                                Msg::SensemakerEnabled
+                                                            }
+                                                            Ok(resp) =>
+                                                                Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                                                            Err(err) =>
+                                                                Msg::Error(format!("err: {:?}", err)),
+                                                        }
+                                                    }
+                                                    Ok(resp) =>
+                                                        Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                                                    Err(err) =>
+                                                        Msg::Error(format!("err: {:?}", err)),
+                                                }
+                                            }
+                                            Ok(resp) =>
+                                                Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                                            Err(err) =>
+                                                Msg::Error(format!("err: {:?}", err)),
+                                        }
+                                    } else {
+                                        Msg::Info("cell_ids.len() != 1".into())
+                                    }
+                                }
+                                Ok(resp) =>
+                                    Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                                Err(err) =>
+                                    Msg::Error(format!("err: {:?}", err)),
+                            }
+                        });
+                    }
+                }
+
+                false
+            }
+
+            Msg::Error(err) => {
+                console_error!("Error: {}", err);
+                false
+            }
+
+            Msg::Info(msg) => {
+                console_log!("Info: {}", msg);
+                false
+            }
+
+            Msg::SensemakerEnabled => {
+                console_log!("sensemaker enabled");
+                false
             }
         }
     }
