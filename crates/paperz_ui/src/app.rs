@@ -13,8 +13,7 @@ pub enum Msg {
     AppWs(WsMsg<AppWebsocket, AppWsCmd, AppWsCmdResponse>),
     PaperzCellId(CellId),
     Error(String),
-    Info(String),
-    SensemakerEnabled,
+    SensemakerEnabled(bool),
 }
 
 pub struct Model {
@@ -181,9 +180,9 @@ impl Component for Model {
                                         Err(err) => Err(format!("err: {:?}", err)),
                                     }?;
                                     console_log!(format!("enable_app: {:?}", enable_app));
-                                    Ok(Msg::SensemakerEnabled)
+                                    Ok(Msg::SensemakerEnabled(true))
                                 } else {
-                                    Ok(Msg::Info("cell_ids.len() != 1".into()))
+                                    Ok(Msg::SensemakerEnabled(false))
                                 }
                             };
                             match ret.await {
@@ -202,13 +201,11 @@ impl Component for Model {
                 false
             }
 
-            Msg::Info(msg) => {
-                console_log!("Info: {}", msg);
-                false
-            }
-
-            Msg::SensemakerEnabled => {
-                console_log!("sensemaker enabled");
+            Msg::SensemakerEnabled(just_enabled) => {
+                console_log!(format!(
+                    "sensemaker enabled. just_enabled: {}",
+                    just_enabled
+                ));
                 false
             }
         }
