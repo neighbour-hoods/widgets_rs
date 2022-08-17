@@ -1,4 +1,5 @@
-use wasm_bindgen::prelude::*;
+use js_sys::{Array, Object, Reflect};
+use wasm_bindgen::{prelude::*, JsCast};
 use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
@@ -8,10 +9,21 @@ use holochain_client_wrapper::{
     AppWsCmd, AppWsCmdResponse, CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
     HashRoleProof, SerializeToJsObj,
 };
-use paperz_core::types::{Paper, PaperEhVec};
+use paperz_core::types::Paper;
 use widget_helpers::{handle_update, WsMsg, WsState};
 
 use crate::file_upload::FileUploadApp;
+
+pub struct Pair<A, B>(A, B);
+
+impl<A, B> Pair<A, B> {
+    fn to_tuple(self: Self) -> (A, B) {
+        let Pair(a, b) = self;
+        (a, b)
+    }
+}
+
+pub type PaperEhVec = Vec<Pair<EntryHashRaw, Paper>>;
 
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
 
@@ -250,7 +262,10 @@ impl Component for Model {
                             match resp {
                                 Ok(AppWsCmdResponse::CallZome(val)) => {
                                     Msg::ZomeCallResponse(ZomeCallResponse::Papers(
-                                        PaperEhVec::deserialize_from_js_obj(val),
+                                        PaperEhVec::deserialize_from_js_obj_(val)
+                                            .into_iter()
+                                            .map(|pair| pair.to_tuple())
+                                            .collect(),
                                     ))
                                 }
                                 Ok(resp) => {
@@ -300,7 +315,7 @@ impl Component for Model {
                             match resp {
                                 Ok(AppWsCmdResponse::CallZome(val)) => {
                                     let (paper_eh, _paper_hh) =
-                                        EntryHeaderHashPairRaw::deserialize_from_js_obj(val);
+                                        EntryHeaderHashPairRaw::deserialize_from_js_obj_(val);
                                     Msg::ZomeCallResponse(ZomeCallResponse::UploadPaper(
                                         paper_eh, paper,
                                     ))
@@ -374,5 +389,79 @@ impl Model {
                 {onkeypress}
             />
         }
+    }
+}
+
+pub trait SerializeToJsObj_ {
+    fn serialize_to_js_obj(self) -> JsValue;
+}
+
+pub trait DeserializeFromJsObj_ {
+    fn deserialize_from_js_obj_(_: JsValue) -> Self;
+}
+
+impl SerializeToJsObj_ for Paper {
+    fn serialize_to_js_obj(self) -> JsValue {
+        let ret = move || -> Result<JsValue, JsValue> {
+            let val: JsValue = Object::new().dyn_into()?;
+            assert!(Reflect::set(
+                &val,
+                &JsValue::from_str("filename"),
+                &self.filename.serialize_to_js_obj(),
+            )?);
+            assert!(Reflect::set(
+                &val,
+                &JsValue::from_str("blob_str"),
+                &self.blob_str.serialize_to_js_obj(),
+            )?);
+            Ok(val)
+        };
+        ret().expect("operations to succeed")
+    }
+}
+
+impl<T: DeserializeFromJsObj_> DeserializeFromJsObj_ for Vec<T> {
+    fn deserialize_from_js_obj_(v: JsValue) -> Self {
+        let arr: Array = v.dyn_into().expect("Array conversion to succeed");
+        let len = arr.length();
+        let mut ret = Vec::new();
+        for idx in 0..len {
+            let ele = arr.get(idx);
+            ret.push(T::deserialize_from_js_obj_(ele));
+        }
+        ret
+    }
+}
+
+impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj_> DeserializeFromJsObj_ for Pair<A, B> {
+    fn deserialize_from_js_obj_(v: JsValue) -> Self {
+        let arr: Array = v.dyn_into().expect("Array conversion to succeed");
+        let a = arr.at(0);
+        let b = arr.at(1);
+        Pair(
+            A::deserialize_from_js_obj(a),
+            B::deserialize_from_js_obj_(b),
+        )
+    }
+}
+
+impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj> DeserializeFromJsObj_ for (A, B) {
+    fn deserialize_from_js_obj_(v: JsValue) -> Self {
+        let arr: Array = v.dyn_into().expect("Array conversion to succeed");
+        let a = arr.at(0);
+        let b = arr.at(1);
+        (A::deserialize_from_js_obj(a), B::deserialize_from_js_obj(b))
+    }
+}
+
+impl DeserializeFromJsObj_ for Paper {
+    fn deserialize_from_js_obj_(v: JsValue) -> Self {
+        let filename = String::deserialize_from_js_obj(
+            Reflect::get(&v, &JsValue::from_str("filename")).expect("object field get to succeed"),
+        );
+        let blob_str = String::deserialize_from_js_obj(
+            Reflect::get(&v, &JsValue::from_str("blob_str")).expect("object field get to succeed"),
+        );
+        Self { filename, blob_str }
     }
 }

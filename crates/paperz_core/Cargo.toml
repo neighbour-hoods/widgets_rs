@@ -12,8 +12,4 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 chrono = "=0.4.6"
 hdk = "0.0.136"
-js-sys = "0.3.59"
 serde = "1"
-wasm-bindgen = "0.2"
-
-holochain_client_wrapper = { path = "../holochain_client_wrapper" }
