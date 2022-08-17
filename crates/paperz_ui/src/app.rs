@@ -292,8 +292,6 @@ impl Component for Model {
             }
 
             Msg::BrowserUploadedPaper(paper) => {
-                console_log!(format!("paper: {:?}", paper));
-
                 match self.app_ws.clone() {
                     WsState::Absent(err) => {
                         console_error!(format!("WsState::Absent: {}", err));
@@ -340,6 +338,9 @@ impl Component for Model {
                 link.send_future(async { Msg::BrowserUploadedPaper(paper) })
             })
         };
+        let mk_paper_src = |paper: Paper| -> String {
+            "data:application/pdf;base64,".to_string() + &paper.blob_str
+        };
 
         html! {
             <div>
@@ -348,7 +349,7 @@ impl Component for Model {
                 <FileUploadApp {on_paper_upload} />
                 <br/>
                 <h3 class="subtitle">{"paperz"}</h3>
-                { for self.paperz.iter().map(|paper| html!{ <iframe src={paper.1.blob_str.clone()} width="100%" height="500px" /> }) }
+                { for self.paperz.iter().map(|pair| html!{ <iframe src={mk_paper_src(pair.1.clone())} width="100%" height="500px" /> }) }
             </div>
         }
     }

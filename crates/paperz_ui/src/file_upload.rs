@@ -1,10 +1,12 @@
 /// this was borrowed from
 /// https://github.com/yewstack/yew/tree/8172b9ceacdcd7d4609e8ba00f758507a8bbc85d/examples/file_upload
 /// and modified.
+use base64::encode;
 use gloo::file::callbacks::FileReader;
 use gloo::file::File;
 use std::collections::HashMap;
 use web_sys::{Event, HtmlInputElement};
+use weblog::console_error;
 use yew::html::TargetCast;
 use yew::{html, Callback, Component, Context, Html, Properties};
 
@@ -48,11 +50,14 @@ impl Component for FileUploadApp {
                         let filename = filename.clone();
                         let link = ctx.link().clone();
 
-                        gloo::file::callbacks::read_as_text(&file, move |res| {
-                            link.send_message(Msg::Loaded(Paper {
+                        gloo::file::callbacks::read_as_bytes(&file, move |res| match res {
+                            Err(err) => {
+                                console_error!(format!("gloo file read_as_bytes error: {}", err));
+                            }
+                            Ok(bytes) => link.send_message(Msg::Loaded(Paper {
                                 filename: filename.clone(),
-                                blob_str: res.unwrap_or_else(|e| e.to_string()),
-                            }))
+                                blob_str: encode(bytes),
+                            })),
                         })
                     };
                     self.readers.insert(filename, task);
