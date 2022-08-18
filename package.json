@@ -7,7 +7,7 @@
     "setup": "npm install && npm install ./submodules/holochain-client-js",
     "hcw_ui:serve": "miniserve -p 8080 ./crates/holochain_client_wrapper_ui",
     "hcw_ui:build": "wasm-pack build ./crates/holochain_client_wrapper_ui --target web && ./node_modules/.bin/esbuild ./crates/holochain_client_wrapper_ui/main.js --format=iife --bundle --outfile=./crates/holochain_client_wrapper_ui/pkg/bundle.js",
-    "hc-js-build": "node ./crates/holochain_client_wrapper/esbuild.config.js",
+    "hc-js-build": "./node_modules/.bin/esbuild ./crates/holochain_client_wrapper/submodules/holochain-client-js/src/index.ts --format=esm --bundle --outfile=./crates/holochain_client_wrapper/holochain_client_wrapper/src/holochain_client_wrapper.js",
 
     "hc:clean": "rm -rf .hc*",
     "paperz_ui:serve": "miniserve -p 8080 ./crates/paperz_ui",
