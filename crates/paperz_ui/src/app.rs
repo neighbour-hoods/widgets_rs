@@ -5,7 +5,7 @@ use yew::{html::Scope, prelude::*};
 
 use holochain_client_wrapper::{
     connect_admin_ws, connect_app_ws, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket,
-    AppWsCmd, AppWsCmdResponse, CellId, EntryHashRaw, EntryHeaderHashPairRaw, HashRoleProof,
+    AppWsCmd, AppWsCmdResponse, CellId, EntryHashRaw, EntryHeaderHashPairRaw,
 };
 use paperz_core::types::Paper;
 use widget_helpers::{handle_update, WsMsg, WsState};
@@ -20,7 +20,6 @@ pub enum Msg {
     PaperzCellId(CellId),
     Log(String),
     Error(String),
-    SensemakerEnabled(bool),
     ZomeCallResponse(ZomeCallResponse),
     BrowserUploadedPaper(Paper),
 }
@@ -145,68 +144,35 @@ impl Component for Model {
                 self.paperz_cell_id = Some(cell_id.clone());
                 console_log!(format!("got cell_id: {:?}", cell_id));
 
-                match self.admin_ws.clone() {
+                match self.app_ws.clone() {
                     WsState::Absent(err) => {
                         console_error!(format!("WsState::Absent: {}", err));
                     }
-                    WsState::Present(ws) => {
-                        ctx.link().send_future(async move {
-                            let ret = async {
-                                let cell_ids = match ws.call(AdminWsCmd::ListCellIds).await {
-                                    Ok(AdminWsCmdResponse::ListCellIds(x)) => Ok(x),
-                                    Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
-                                    Err(err) => Err(format!("err: {:?}", err)),
-                                }?;
-
-                                if cell_ids.len() == 1 {
-                                    let cmd = AdminWsCmd::RegisterDna {
-                                        path: "../social_sensemaker/happs/social_sensemaker/social_sensemaker.dna".into(),
-                                        uid: None,
-                                        properties: None,
-                                    };
-                                    let dna_hash = match ws.call(cmd).await {
-                                        Ok(AdminWsCmdResponse::RegisterDna(x)) => Ok(x),
-                                        Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
-                                        Err(err) => Err(format!("err: {:?}", err)),
-                                    }?;
-                                    let installed_app_id: String = "sensemaker".into();
-                                    let cmd = AdminWsCmd::InstallApp {
-                                        installed_app_id: installed_app_id.clone(),
-                                        agent_key: cell_id.1,
-                                        dnas: vec![
-                                            HashRoleProof {
-                                                hash: dna_hash,
-                                                role_id: "thedna".into(),
-                                                membrane_proof: None,
-                                            }
-                                        ],
-                                    };
-                                    let install_app = match ws.call(cmd).await {
-                                        Ok(AdminWsCmdResponse::InstallApp(x)) => Ok(x),
-                                        Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
-                                        Err(err) => Err(format!("err: {:?}", err)),
-                                    }?;
-                                    console_log!(format!("install_app: {:?}", install_app));
-                                    let cmd = AdminWsCmd::EnableApp {
-                                        installed_app_id,
-                                    };
-                                    let enable_app = match ws.call(cmd).await {
-                                        Ok(AdminWsCmdResponse::EnableApp(x)) => Ok(x),
-                                        Ok(resp) => Err(format!("impossible: invalid response: {:?}", resp)),
-                                        Err(err) => Err(format!("err: {:?}", err)),
-                                    }?;
-                                    console_log!(format!("enable_app: {:?}", enable_app));
-                                    Ok(Msg::SensemakerEnabled(true))
-                                } else {
-                                    Ok(Msg::SensemakerEnabled(false))
-                                }
-                            };
-                            match ret.await {
-                                Err(err) => Msg::Error(err),
-                                Ok(msg) => msg
+                    WsState::Present(ws) => ctx.link().send_future(async move {
+                        let cmd = AppWsCmd::CallZome {
+                            cell_id: cell_id.clone(),
+                            zome_name: PAPERZ_ZOME_NAME.into(),
+                            fn_name: "get_all_paperz".into(),
+                            payload: JsValue::NULL,
+                            provenance: cell_id.1.clone(),
+                            cap: "".into(),
+                        };
+                        let resp = ws.call(cmd).await;
+                        match resp {
+                            Ok(AppWsCmdResponse::CallZome(val)) => {
+                                Msg::ZomeCallResponse(ZomeCallResponse::Papers(
+                                    PaperEhVec::deserialize_from_js_obj_(val)
+                                        .into_iter()
+                                        .map(|pair| pair.into())
+                                        .collect(),
+                                ))
                             }
-                        });
-                    }
+                            Ok(resp) => {
+                                Msg::Error(format!("impossible: invalid response: {:?}", resp))
+                            }
+                            Err(err) => Msg::Error(format!("err: {:?}", err)),
+                        }
+                    }),
                 }
 
                 false
@@ -219,51 +185,6 @@ impl Component for Model {
 
             Msg::Log(err) => {
                 console_log!("Log: {}", err);
-                false
-            }
-
-            Msg::SensemakerEnabled(just_enabled) => {
-                console_log!(format!(
-                    "sensemaker enabled. just_enabled: {}",
-                    just_enabled
-                ));
-
-                match self.app_ws.clone() {
-                    WsState::Absent(err) => {
-                        console_error!(format!("WsState::Absent: {}", err));
-                    }
-                    WsState::Present(ws) => match self.paperz_cell_id.clone() {
-                        None => {
-                            console_error!("paperz_cell_id is None");
-                        }
-                        Some(cell_id) => ctx.link().send_future(async move {
-                            let cmd = AppWsCmd::CallZome {
-                                cell_id: cell_id.clone(),
-                                zome_name: PAPERZ_ZOME_NAME.into(),
-                                fn_name: "get_all_paperz".into(),
-                                payload: JsValue::NULL,
-                                provenance: cell_id.1.clone(),
-                                cap: "".into(),
-                            };
-                            let resp = ws.call(cmd).await;
-                            match resp {
-                                Ok(AppWsCmdResponse::CallZome(val)) => {
-                                    Msg::ZomeCallResponse(ZomeCallResponse::Papers(
-                                        PaperEhVec::deserialize_from_js_obj_(val)
-                                            .into_iter()
-                                            .map(|pair| pair.into())
-                                            .collect(),
-                                    ))
-                                }
-                                Ok(resp) => {
-                                    Msg::Error(format!("impossible: invalid response: {:?}", resp))
-                                }
-                                Err(err) => Msg::Error(format!("err: {:?}", err)),
-                            }
-                        }),
-                    },
-                };
-
                 false
             }
 
