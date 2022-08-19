@@ -13,3 +13,7 @@ happs/**/*.happ
 happs/**/*.wasm
 .hc
 .hc_live_*
+
+# web-happ
+crates/dist.zip
+happs/paperz/paperz.webhapp

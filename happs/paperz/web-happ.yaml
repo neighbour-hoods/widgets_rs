@@ -1,0 +1,7 @@
+---
+manifest_version: "1"
+name: paperz
+ui:
+  bundled: "../../crates/dist.zip"
+happ_manifest:
+  bundled: "./paperz.happ"
