@@ -3,6 +3,8 @@ use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
 
+use social_sensemaker_core::SENSEMAKER_ZOME_NAME;
+
 use holochain_client_wrapper::{
     AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd, AppWsCmdResponse,
     CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
@@ -20,6 +22,7 @@ pub enum Msg {
     Error(String),
     ZomeCallResponse(ZomeCallResponse),
     BrowserUploadedPaper(Paper),
+    SensemakerPresent(bool),
 }
 
 pub enum WsMsg<WSCMD, WSCMDRESP> {
@@ -37,6 +40,8 @@ pub struct Model {
     app_ws: AppWebsocket,
     paperz_cell_id: CellId,
     paperz: Vec<(EntryHashRaw, Paper)>,
+    /// None means we don't know yet (no response). for `Some(b)`, `b == True` indicates presence.
+    sensemaker_present: Option<bool>,
 }
 
 #[derive(Properties, PartialEq)]
@@ -79,11 +84,25 @@ impl Component for Model {
                 Err(err) => Msg::Error(format!("err: {:?}", err)),
             }
         });
+        let admin_ws: AdminWebsocket = props.admin_ws_js.clone().into();
+        let admin_ws_ = admin_ws.clone();
+        ctx.link().send_future(async move {
+            let resp = admin_ws_.call(AdminWsCmd::ListActiveApps).await;
+            match resp {
+                Ok(AdminWsCmdResponse::ListActiveApps(active_apps)) => {
+                    let sensemaker_present = active_apps.contains(&SENSEMAKER_ZOME_NAME.into());
+                    Msg::SensemakerPresent(sensemaker_present)
+                }
+                Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                Err(err) => Msg::Error(format!("err: {:?}", err)),
+            }
+        });
         Self {
-            admin_ws: props.admin_ws_js.clone().into(),
+            admin_ws,
             app_ws,
             paperz_cell_id: cell_id.clone(),
             paperz: Vec::new(),
+            sensemaker_present: None,
         }
     }
 
@@ -179,10 +198,27 @@ impl Component for Model {
                 });
                 true
             }
+
+            Msg::SensemakerPresent(sensemaker_present) => {
+                self.sensemaker_present = Some(sensemaker_present);
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let sensemaker_present_html = match self.sensemaker_present {
+            None => html! {},
+            Some(true) => html! {
+                <p>{"sensemaker is present"}</p>
+            },
+            Some(false) => html! {
+                <div class="alert">
+                  <h3>{"social_sensemaker is absent!"}</h3>
+                  <p>{"please install it into your `we`, as `paperz` requires it to function."}</p>
+                </div>
+            },
+        };
         let on_paper_upload: Callback<Paper> = {
             let link = ctx.link().clone();
             Callback::from(move |paper: Paper| {
@@ -196,6 +232,8 @@ impl Component for Model {
         html! {
             <div>
                 <p>{"hello, paperz 👋"}</p>
+                <br/>
+                {sensemaker_present_html}
                 <br/>
                 <FileUploadApp {on_paper_upload} />
                 <br/>

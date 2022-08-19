@@ -4,8 +4,9 @@ use common::{
     compose_entry_hash_path, get_latest_linked_entry, remote_get_sensemaker_entry_by_path,
     remote_initialize_sm_data, remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm,
     sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
-    OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG,
 };
+use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
+
 use paperz_core::types::{Annotation, Paper};
 
 pub const PAPER_TAG: &str = "paperz_paper";
