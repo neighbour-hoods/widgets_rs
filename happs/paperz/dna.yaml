@@ -1,8 +1,16 @@
 manifest_version: "1"
 name: "paperz"
-uuid: ""
-properties: null
-zomes:
-  - name: paperz_main_zome
-    bundled: "./paperz.wasm"
-    #    properties:
+
+integrity:
+  uid: 00000000-0000-0000-0000-000000000000
+  properties: ~
+  zomes:
+    - name: paperz_integrity
+      bundled: ./paperz_integrity.wasm
+
+coordinator:
+  zomes:
+    - name: paperz
+      bundled: ./paperz_coordinator.wasm
+      dependencies:
+        - name: paperz_integrity

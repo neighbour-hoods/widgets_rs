@@ -857,7 +857,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
-name = "paperz"
+name = "paperz_coordinator"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -878,6 +878,10 @@ dependencies = [
  "hdk",
  "serde",
 ]
+
+[[package]]
+name = "paperz_integrity"
+version = "0.1.0"
 
 [[package]]
 name = "paperz_ui"
