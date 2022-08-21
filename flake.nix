@@ -1,6 +1,6 @@
 {
   inputs = {
-    nh-nix-env.url = "github:neighbour-hoods/nh-nix-env";
+    nh-nix-env.url = "github:neighbour-hoods/nh-nix-env?ref=holochain_0.0.155";
     social_sensemaker.url = "github:neighbour-hoods/social_sensemaker";
   };
 
