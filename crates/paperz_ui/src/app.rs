@@ -16,6 +16,8 @@ use widget_helpers::file_upload::{FileBytes, FileUploadApp};
 use crate::js_ser_de::*;
 
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
+// TODO get rid of this once we're using proper sensemaker app name
+const TEST_APP_NAME: &str = "test-app";
 
 pub enum Msg {
     AdminWs(WsMsg<AdminWsCmd, AdminWsCmdResponse>),
@@ -92,7 +94,7 @@ impl Component for Model {
             let resp = admin_ws_.call(AdminWsCmd::ListActiveApps).await;
             match resp {
                 Ok(AdminWsCmdResponse::ListActiveApps(active_apps)) => {
-                    let sensemaker_present = active_apps.contains(&SENSEMAKER_ZOME_NAME.into());
+                    let sensemaker_present = active_apps.contains(&TEST_APP_NAME.into());
                     Msg::SensemakerPresent(sensemaker_present)
                 }
                 Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
