@@ -7,7 +7,7 @@ use common::{
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
-use memez_core::types::{Meme};
+use memez_core::types::Meme;
 
 pub const MEME_TAG: &str = "memez_meme";
 pub const MEMEZ_PATH: &str = "widget.memez.memez";

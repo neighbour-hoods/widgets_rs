@@ -234,9 +234,8 @@ impl Component for Model {
                 link.send_future(async { Msg::BrowserUploadedMeme(meme) })
             })
         };
-        let mk_meme_src = |meme: Meme| -> String {
-            "data:img;base64,".to_string() + &meme.blob_str
-        };
+        let mk_meme_src =
+            |meme: Meme| -> String { "data:img;base64,".to_string() + &meme.blob_str };
 
         html! {
             <div>
