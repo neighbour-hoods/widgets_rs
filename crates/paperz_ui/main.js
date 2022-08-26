@@ -1,8 +1,7 @@
-import init, { run_app } from './pkg/paperz_ui.js';
+import { run_app } from './pkg/paperz_ui.js';
 import { AppWebsocket, AdminWebsocket } from '@holochain/client';
 
 async function main() {
-  await init('/pkg/paperz_ui_bg.wasm');
   let element = document.getElementById("paperz_main");
   let admin_ws_js = await AdminWebsocket.connect("ws://localhost:9000");
   let app_ws_js = await AppWebsocket.connect("ws://localhost:9999");

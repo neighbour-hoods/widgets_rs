@@ -7,12 +7,12 @@
   "scripts": {
     "setup": "npm install && npm install ./submodules/holochain-client-js",
     "hcw_ui:serve": "miniserve -p 8080 ./crates/holochain_client_wrapper_ui",
-    "hcw_ui:build": "wasm-pack build ./crates/holochain_client_wrapper_ui --target web && ./node_modules/.bin/esbuild ./crates/holochain_client_wrapper_ui/main.js --format=iife --bundle --outfile=./crates/holochain_client_wrapper_ui/pkg/bundle.js",
+    "hcw_ui:build": "wasm-pack build ./crates/holochain_client_wrapper_ui --target web && ./node_modules/.bin/esbuild ./crates/holochain_client_wrapper_ui/main.js --format=esm --bundle --outfile=./crates/holochain_client_wrapper_ui/pkg/bundle.js",
     "hc-js-build": "./node_modules/.bin/esbuild ./crates/holochain_client_wrapper/submodules/holochain-client-js/src/index.ts --format=esm --bundle --outfile=./crates/holochain_client_wrapper/holochain_client_wrapper/src/holochain_client_wrapper.js",
-
     "hc:clean": "rm -rf .hc*",
     "paperz_ui:serve": "miniserve -p 8080 ./crates/paperz_ui",
-    "paperz_ui:build": "wasm-pack build ./crates/paperz_ui --target web && ./node_modules/.bin/esbuild ./crates/paperz_ui/main.js --format=iife --bundle --outfile=./crates/paperz_ui/pkg/bundle.js",
+    "paperz_ui:build": "wasm-pack build ./crates/paperz_ui --target bundler && node ./crates/paperz_ui/esbuild.config.js",
+    "paperz_ui:build-we-applet": "wasm-pack build ./crates/paperz_ui --target bundler && node ./crates/paperz_ui/esbuild-we-applet.config.js",
     "paperz_ui:package": "npm run paperz_ui:build && npm run paperz:build && npm run paperz:pack && cd crates/paperz_ui && ../../node_modules/.bin/bestzip ../dist.zip * && cd ../.. && hc web-app pack happs/paperz",
     "paperz:build": "cargo build -p paperz_integrity -p paperz_coordinator --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/debug/paperz_integrity.wasm ./happs/paperz && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/debug/paperz_coordinator.wasm ./happs/paperz",
     "paperz:build-release": "cargo build -p paperz --release --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/paperz_integrity.wasm ./happs/paperz && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/paperz_coordinator.wasm ./happs/paperz",
@@ -21,5 +21,8 @@
     "paperz:redo": "npm run paperz:build && npm run paperz:pack && npm run paperz:run",
     "hc:mk-sensemaker": "nix build .#social_sensemaker --impure",
     "hc:pg": "npx @holochain-playground/cli ws://localhost:9000"
+  },
+  "devDependencies": {
+    "esbuild-plugin-wasm": "^1.0.0"
   }
 }
