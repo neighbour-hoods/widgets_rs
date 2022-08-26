@@ -1,3 +1,4 @@
+use base64::encode;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
@@ -10,8 +11,9 @@ use holochain_client_wrapper::{
     CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
 };
 use paperz_core::types::Paper;
+use widget_helpers::file_upload::{FileBytes, FileUploadApp};
 
-use crate::{file_upload::FileUploadApp, js_ser_de::*};
+use crate::js_ser_de::*;
 
 const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
 
@@ -219,9 +221,13 @@ impl Component for Model {
                 </div>
             },
         };
-        let on_paper_upload: Callback<Paper> = {
+        let on_file_upload: Callback<FileBytes> = {
             let link = ctx.link().clone();
-            Callback::from(move |paper: Paper| {
+            Callback::from(move |fb: FileBytes| {
+                let paper = Paper {
+                    filename: fb.filename,
+                    blob_str: encode(fb.bytes),
+                };
                 link.send_future(async { Msg::BrowserUploadedPaper(paper) })
             })
         };
@@ -235,7 +241,7 @@ impl Component for Model {
                 <br/>
                 {sensemaker_present_html}
                 <br/>
-                <FileUploadApp {on_paper_upload} />
+                <FileUploadApp {on_file_upload} />
                 <br/>
                 <h3 class="subtitle">{"paperz"}</h3>
                 { for self.paperz.iter().map(|pair| html!{ <iframe src={mk_paper_src(pair.1.clone())} width="100%" height="500px" /> }) }

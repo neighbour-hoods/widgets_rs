@@ -1,5 +1,4 @@
 mod app;
-mod file_upload;
 mod js_ser_de;
 
 use wasm_bindgen::prelude::*;
