@@ -17,7 +17,7 @@ yew = "0.19.3"
 social_sensemaker_core = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
 
 holochain_client_wrapper = { path = "../holochain_client_wrapper/holochain_client_wrapper" }
-paperz_core = { path = "../paperz_core" }
+paperz_integrity = { path = "../paperz_integrity" }
 widget_helpers = { path = "../widget_helpers" }
 
 [dependencies.web-sys]

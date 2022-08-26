@@ -7,7 +7,7 @@ use common::{
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
-use paperz_core::types::{Annotation, Paper};
+use paperz_integrity::{Annotation, Paper};
 
 pub const PAPER_TAG: &str = "paperz_paper";
 pub const ANN_TAG: &str = "annotationz";
@@ -17,7 +17,6 @@ entry_defs![
     Paper::entry_def(),
     Annotation::entry_def(),
     SensemakerCellId::entry_def(),
-    PathEntry::entry_def()
 ];
 
 sensemaker_cell_id_fns! {}
@@ -27,13 +26,13 @@ fn paper_anchor() -> ExternResult<EntryHash> {
 }
 
 #[hdk_extern]
-fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
+fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, ActionHash)> {
     debug!(
         "upload_paper: received input of length {}",
         paper.blob_str.len()
     );
 
-    let paper_hh = create_entry(&paper)?;
+    let paper_ah = create_entry(&paper)?;
     let paper_eh = hash_entry(&paper)?;
     create_link(
         paper_anchor()?,
@@ -42,7 +41,7 @@ fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
         LinkTag::new(PAPER_TAG),
     )?;
 
-    Ok((paper_eh, paper_hh))
+    Ok((paper_eh, paper_ah))
 }
 
 #[hdk_extern]

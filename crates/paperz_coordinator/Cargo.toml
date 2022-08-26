@@ -6,9 +6,8 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
-hdk = "0.0.136"
+hdk = "0.0.147"
 serde = "1"
-chrono = "=0.4.6"
 
 # common = { path = "../../../social_sensemaker/crates/common" }
 common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
@@ -16,7 +15,7 @@ rep_lang_core = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev =
 rep_lang_runtime = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
 social_sensemaker_core = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
 
-paperz_core = { path = "../paperz_core" }
+paperz_integrity = { path = "../paperz_integrity" }
 
 [lib]
 path = "src/lib.rs"
