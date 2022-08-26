@@ -25,6 +25,7 @@ pub struct FileUploadApp {
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
+    pub content_name: String,
     pub on_file_upload: Callback<FileBytes>,
 }
 
@@ -72,7 +73,7 @@ impl Component for FileUploadApp {
         html! {
             <div>
                 <div>
-                    <h3 class="subtitle">{"upload paper"}</h3>
+                    <h3 class="subtitle">{format!("upload {}", ctx.props().content_name)}</h3>
                     <input type="file" multiple=true onchange={ctx.link().callback(move |e: Event| {
                             let mut result = Vec::new();
                             let input: HtmlInputElement = e.target_unchecked_into();

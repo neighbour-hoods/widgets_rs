@@ -1,0 +1,23 @@
+[package]
+name = "memez"
+version = "0.1.0"
+authors = ["Michael Hueschen <m@mhueschen.space>"]
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+hdk = "0.0.136"
+serde = "1"
+chrono = "=0.4.6"
+
+# common = { path = "../../../social_sensemaker/crates/common" }
+common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
+rep_lang_core = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
+rep_lang_runtime = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
+social_sensemaker_core = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
+
+memez_core = { path = "../memez_core" }
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]

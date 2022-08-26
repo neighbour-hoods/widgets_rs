@@ -11,6 +11,15 @@
     "hc-js-build": "./node_modules/.bin/esbuild ./crates/holochain_client_wrapper/submodules/holochain-client-js/src/index.ts --format=esm --bundle --outfile=./crates/holochain_client_wrapper/holochain_client_wrapper/src/holochain_client_wrapper.js",
 
     "hc:clean": "rm -rf .hc*",
+
+    "memez_ui:serve": "miniserve -p 8081 ./crates/memez_ui",
+    "memez_ui:build": "wasm-pack build ./crates/memez_ui --target web && ./node_modules/.bin/esbuild ./crates/memez_ui/main.js --format=iife --bundle --outfile=./crates/memez_ui/pkg/bundle.js",
+    "memez:build": "cargo build -p memez --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/debug/memez.wasm ./happs/memez",
+    "memez:build-release": "cargo build -p memez --release --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/memez.wasm ./happs/memez",
+    "memez:pack": "hc dna pack happs/memez && hc app pack happs/memez",
+    "memez:run": "hc sandbox generate happs/memez && WASM_LOG=debug RUST_LOG=error RUST_BACKTRACE=full hc sandbox -f=9000 run -l -p 9999",
+    "memez:redo": "npm run memez:build && npm run memez:pack && npm run memez:run",
+
     "paperz_ui:serve": "miniserve -p 8080 ./crates/paperz_ui",
     "paperz_ui:build": "wasm-pack build ./crates/paperz_ui --target web && ./node_modules/.bin/esbuild ./crates/paperz_ui/main.js --format=iife --bundle --outfile=./crates/paperz_ui/pkg/bundle.js",
     "paperz_ui:package": "npm run paperz_ui:build && npm run paperz:build && npm run paperz:pack && cd crates/paperz_ui && ../../node_modules/.bin/bestzip ../dist.zip * && cd ../.. && hc web-app pack happs/paperz",
