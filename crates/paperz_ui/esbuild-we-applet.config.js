@@ -2,9 +2,9 @@ const esbuild = require('esbuild');
 const { wasmLoader } = require('esbuild-plugin-wasm');
 
 esbuild.build({
-  entryPoints: ['./crates/paperz_ui/index.js'],
+  entryPoints: ['./crates/paperz_ui/index-pre.js'],
   bundle: true,
-  outfile: './crates/paperz_ui/pkg/bundle-we-applet.js',
+  outfile: './crates/paperz_ui/index.js',
   format: 'esm',
   plugins: [
     wasmLoader({

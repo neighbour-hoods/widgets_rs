@@ -16,4 +16,5 @@ happs/**/*.wasm
 
 # web-happ
 crates/dist.zip
+crates/paperz_ui/index.js
 happs/paperz/paperz.webhapp
