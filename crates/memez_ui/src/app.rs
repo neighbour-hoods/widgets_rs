@@ -29,6 +29,7 @@ pub enum Msg {
     SensemakerPresent(bool),
     SmInitSubmit(String),
     SmCompSubmit(String),
+    ClapForMeme(EntryHashRaw),
 }
 
 pub enum WsMsg<WSCMD, WSCMDRESP> {
@@ -236,6 +237,36 @@ impl Component for Model {
                 self.meme_sm.1 = expr_str;
                 true
             }
+
+            Msg::ClapForMeme(meme_eh) => {
+                let app_ws_ = self.app_ws.clone();
+                let cell_id_ = self.memez_cell_id.clone();
+                let meme_eh_ = meme_eh.clone();
+                ctx.link().send_future(async move {
+                    let cmd = AppWsCmd::CallZome {
+                        cell_id: cell_id_.clone(),
+                        zome_name: MEMEZ_ZOME_NAME.into(),
+                        fn_name: "clap_for_meme".into(),
+                        payload: meme_eh_.serialize_to_js_obj(),
+                        provenance: cell_id_.1.clone(),
+                        cap: "".into(),
+                    };
+                    let resp = app_ws_.call(cmd).await;
+                    match resp {
+                        Ok(AppWsCmdResponse::CallZome(val)) => {
+                            Msg::Log(format!("clap_for_meme: {:?}", val))
+                        }
+                        Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                        Err(err) => Msg::Error(format!("err: {:?}", err)),
+                    }
+                });
+                for triple in self.memez.iter_mut() {
+                    if triple.0 == meme_eh {
+                        triple.2 += 1;
+                    }
+                }
+                true
+            }
         }
     }
 
@@ -283,10 +314,11 @@ impl Component for Model {
                 <FileUploadApp {content_name} {on_file_upload} />
                 <br/>
                 <h3 class="subtitle">{"memez"}</h3>
-                { for self.memez.iter().map(|triple| html!{
+                { for self.memez.iter().cloned().map(|triple| html!{
                     <div>
                         <img src={mk_meme_src(triple.1.clone())} width="95%" height="500px" />
-                        <p>{ format!("score: {}", triple.2.clone()) }</p>
+                        <p>{ format!("score: {}", triple.2) }</p>
+                        <button onclick={ctx.link().callback(move |_| Msg::ClapForMeme(triple.0.clone()))}>{ "👏" }</button>
                     </div>
                 }) }
             </div>

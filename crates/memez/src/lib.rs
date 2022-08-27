@@ -50,7 +50,7 @@ fn upload_meme(meme: Meme) -> ExternResult<(EntryHash, HeaderHash)> {
 
 #[hdk_extern]
 fn clap_for_meme(meme_eh: EntryHash) -> ExternResult<()> {
-    todo!()
+    step_sm_remote((MEMEZ_PATH.into(), meme_eh, "1".into()))
 }
 
 #[hdk_extern]
