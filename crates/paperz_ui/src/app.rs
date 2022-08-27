@@ -101,27 +101,10 @@ impl Component for Model {
             STARTER_SM_INIT_EXPR_STRING.into(),
             STARTER_SM_COMP_EXPR_STRING.into(),
         );
-
-        // set sm_init
-        let app_ws_ = app_ws.clone();
-        let cell_id_ = cell_id.clone();
-        let paper_sm_ = paper_sm.clone();
-        ctx.link().send_future(async move {
-            let cmd = AppWsCmd::CallZome {
-                cell_id: cell_id_.clone(),
-                zome_name: PAPERZ_ZOME_NAME.into(),
-                fn_name: "set_sm_init".into(),
-                payload: (AGENT_PATH.to_string(), paper_sm_.0).serialize_to_js_obj(),
-                provenance: cell_id_.1.clone(),
-                cap: "".into(),
-            };
-            let resp = app_ws_.call(cmd).await;
-            match resp {
-                Ok(AppWsCmdResponse::CallZome(val)) => Msg::Log(format!("set_sm_init: {:?}", val)),
-                Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
-                Err(err) => Msg::Error(format!("err: {:?}", err)),
-            }
-        });
+        ctx.link()
+            .send_future(async move { Msg::SmInitSubmit(STARTER_SM_INIT_EXPR_STRING.into()) });
+        ctx.link()
+            .send_future(async move { Msg::SmCompSubmit(STARTER_SM_COMP_EXPR_STRING.into()) });
 
         let admin_ws: AdminWebsocket = props.admin_ws_js.clone().into();
         let admin_ws_ = admin_ws.clone();
@@ -245,11 +228,15 @@ impl Component for Model {
             }
 
             Msg::SmInitSubmit(expr_str) => {
+                self.set_sm(ctx.link(), expr_str.clone(), "set_sm_init".into());
+                // TODO ideally we would wait for confirmation before setting this
                 self.paper_sm.0 = expr_str;
                 true
             }
 
             Msg::SmCompSubmit(expr_str) => {
+                self.set_sm(ctx.link(), expr_str.clone(), "set_sm_comp".into());
+                // TODO ideally we would wait for confirmation before setting this
                 self.paper_sm.1 = expr_str;
                 true
             }
@@ -346,5 +333,26 @@ impl Model {
                 />
             </div>
         }
+    }
+
+    fn set_sm(&self, link: &Scope<Self>, expr_str: String, zome_fn: String) {
+        let app_ws_ = self.app_ws.clone();
+        let cell_id_ = self.paperz_cell_id.clone();
+        link.send_future(async move {
+            let cmd = AppWsCmd::CallZome {
+                cell_id: cell_id_.clone(),
+                zome_name: PAPERZ_ZOME_NAME.into(),
+                fn_name: zome_fn.clone(),
+                payload: (AGENT_PATH.to_string(), expr_str).serialize_to_js_obj(),
+                provenance: cell_id_.1.clone(),
+                cap: "".into(),
+            };
+            let resp = app_ws_.call(cmd).await;
+            match resp {
+                Ok(AppWsCmdResponse::CallZome(val)) => Msg::Log(format!("{}: {:?}", zome_fn, val)),
+                Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                Err(err) => Msg::Error(format!("err: {:?}", err)),
+            }
+        });
     }
 }
