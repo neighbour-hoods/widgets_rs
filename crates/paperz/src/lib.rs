@@ -3,7 +3,7 @@ use hdk::prelude::{holo_hash::DnaHash, *};
 use common::{
     compose_entry_hash_path, get_latest_linked_entry, remote_get_sensemaker_entry_by_path,
     remote_initialize_sm_data, remote_initialize_sm_data_path,
-    remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm, sensemaker_cell_id_anchor,
+    remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm, remote_step_sm_path, sensemaker_cell_id_anchor,
     sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
@@ -190,6 +190,12 @@ fn set_sensemaker_entry(
 #[hdk_extern]
 fn step_sm_remote((path_string, entry_hash, act): (String, EntryHash, String)) -> ExternResult<()> {
     let cell_id = get_sensemaker_cell_id(())?;
-    remote_step_sm(cell_id, None, (path_string, entry_hash, act))?;
-    Ok(())
+    remote_step_sm(cell_id, None, (path_string, entry_hash, act))
+}
+
+// TODO figure out how to automate / streamline all these high-indirection methods
+#[hdk_extern]
+fn step_sm_path_remote(payload: (String, String, String)) -> ExternResult<()> {
+    let cell_id = get_sensemaker_cell_id(())?;
+    remote_step_sm_path(cell_id, None, payload)
 }
