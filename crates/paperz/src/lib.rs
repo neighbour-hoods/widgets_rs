@@ -12,7 +12,7 @@ use paperz_core::types::{Annotation, Paper};
 pub const PAPER_TAG: &str = "paperz_paper";
 pub const ANN_TAG: &str = "annotationz";
 pub const ANNOTATIONZ_PATH: &str = "widget.paperz.annotationz";
-pub const AGENT_PATH: &str = "widget.paperz.agent";
+pub const AGENT_PATH: &str = "widget.agent.paperz";
 
 entry_defs![
     Paper::entry_def(),
