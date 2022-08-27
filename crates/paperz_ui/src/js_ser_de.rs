@@ -4,7 +4,7 @@ use wasm_bindgen::{prelude::*, JsCast};
 use holochain_client_wrapper::{DeserializeFromJsObj, EntryHashRaw, SerializeToJsObj};
 use paperz_core::types::Paper;
 
-pub struct Pair<A, B>(A, B);
+pub struct Pair<A, B>(pub A, pub B);
 
 impl<A, B> Into<(A, B)> for Pair<A, B> {
     fn into(self) -> (A, B) {
@@ -16,7 +16,7 @@ impl<A, B> Into<(A, B)> for Pair<A, B> {
 pub type PaperEhVec = Vec<Pair<EntryHashRaw, Paper>>;
 
 pub trait SerializeToJsObj_ {
-    fn serialize_to_js_obj(self) -> JsValue;
+    fn serialize_to_js_obj_(self) -> JsValue;
 }
 
 pub trait DeserializeFromJsObj_ {
@@ -24,7 +24,7 @@ pub trait DeserializeFromJsObj_ {
 }
 
 impl SerializeToJsObj_ for Paper {
-    fn serialize_to_js_obj(self) -> JsValue {
+    fn serialize_to_js_obj_(self) -> JsValue {
         let ret = move || -> Result<JsValue, JsValue> {
             let val: JsValue = Object::new().dyn_into()?;
             assert!(Reflect::set(
@@ -40,6 +40,16 @@ impl SerializeToJsObj_ for Paper {
             Ok(val)
         };
         ret().expect("operations to succeed")
+    }
+}
+
+impl<A: SerializeToJsObj_, B: SerializeToJsObj> SerializeToJsObj_ for Pair<A, B> {
+    fn serialize_to_js_obj_(self) -> JsValue {
+        let Pair(a, b) = self;
+        let val = Array::new();
+        let _ = val.push(&a.serialize_to_js_obj_());
+        let _ = val.push(&b.serialize_to_js_obj());
+        val.dyn_into().expect("Array conversion to succeed")
     }
 }
 

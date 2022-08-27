@@ -916,6 +916,7 @@ checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 name = "paperz"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "chrono",
  "common 0.1.0 (git+https://github.com/neighbour-hoods/social_sensemaker.git?rev=cf91a205def15598e7e3d7aee898d106c13a91d0)",
  "hdk",
@@ -940,7 +941,6 @@ name = "paperz_ui"
 version = "0.1.0"
 dependencies = [
  "base64",
- "common 0.1.0 (git+https://github.com/neighbour-hoods/social_sensemaker.git?rev=cf91a205def15598e7e3d7aee898d106c13a91d0)",
  "holochain_client_wrapper",
  "js-sys",
  "paperz_core",

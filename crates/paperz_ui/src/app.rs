@@ -208,7 +208,7 @@ impl Component for Model {
                         cell_id: cell_id.clone(),
                         zome_name: PAPERZ_ZOME_NAME.into(),
                         fn_name: "upload_paper".into(),
-                        payload: paper.clone().serialize_to_js_obj(),
+                        payload: Pair(paper.clone(), cell_id.1.clone()).serialize_to_js_obj_(),
                         provenance: cell_id.1.clone(),
                         cap: "".into(),
                     };
@@ -218,31 +218,6 @@ impl Component for Model {
                             let (paper_eh, _paper_hh) =
                                 EntryHeaderHashPairRaw::deserialize_from_js_obj_(val);
                             Msg::ZomeCallResponse(ZomeCallResponse::UploadPaper(paper_eh, paper))
-                        }
-                        Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
-                        Err(err) => Msg::Error(format!("err: {:?}", err)),
-                    }
-                });
-                let ws = self.app_ws.clone();
-                let cell_id = self.paperz_cell_id.clone();
-                ctx.link().send_future(async move {
-                    let typed_payload: (String, String, String) = (
-                        AGENT_PATH.into(),
-                        base64::encode(agent_pk_to_vec_u8(cell_id.1.clone())),
-                        "1".into(),
-                    );
-                    let cmd = AppWsCmd::CallZome {
-                        cell_id: cell_id.clone(),
-                        zome_name: PAPERZ_ZOME_NAME.into(),
-                        fn_name: "step_sm_path_remote".into(),
-                        payload: typed_payload.serialize_to_js_obj(),
-                        provenance: cell_id.1.clone(),
-                        cap: "".into(),
-                    };
-                    let resp = ws.call(cmd).await;
-                    match resp {
-                        Ok(AppWsCmdResponse::CallZome(val)) => {
-                            Msg::Log(format!("step_sm_path_remote: {:?}", val))
                         }
                         Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
                         Err(err) => Msg::Error(format!("err: {:?}", err)),
@@ -273,10 +248,10 @@ impl Component for Model {
             Msg::SmDataInit => {
                 let app_ws_ = self.app_ws.clone();
                 let cell_id_ = self.paperz_cell_id.clone();
-                let payload: (String, String) = (
-                    AGENT_PATH.into(),
-                    base64::encode(agent_pk_to_vec_u8(self.paperz_cell_id.1.clone())),
-                );
+                let agent_b64: String =
+                    base64::encode(agent_pk_to_vec_u8(self.paperz_cell_id.1.clone()));
+                console_log!("agent_b64: ", agent_b64.clone());
+                let payload: (String, String) = (AGENT_PATH.into(), agent_b64);
                 ctx.link().send_future(async move {
                     let cmd = AppWsCmd::CallZome {
                         cell_id: cell_id_.clone(),

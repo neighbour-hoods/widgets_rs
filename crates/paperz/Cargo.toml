@@ -6,6 +6,7 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
+base64 = "0.13.0"
 hdk = "0.0.136"
 serde = "1"
 chrono = "=0.4.6"

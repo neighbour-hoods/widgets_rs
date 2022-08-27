@@ -27,11 +27,14 @@ fn paper_anchor() -> ExternResult<EntryHash> {
 }
 
 #[hdk_extern]
-fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
+fn upload_paper((paper, agent_pk): (Paper, AgentPubKey)) -> ExternResult<(EntryHash, HeaderHash)> {
     debug!(
         "upload_paper: received input of length {}",
         paper.blob_str.len()
     );
+    debug!("upload_paper: agent_pk: {}", agent_pk.clone());
+    let agent_b64: String = base64::encode(agent_pk.clone().into_inner());
+    debug!("upload_paper: agent_b64: {}", agent_b64);
 
     let paper_hh = create_entry(&paper)?;
     let paper_eh = hash_entry(&paper)?;
