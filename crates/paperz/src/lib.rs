@@ -10,7 +10,7 @@ use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
 use paperz_core::{
     types::{Annotation, Paper},
-    ANNOTATIONZ_PATH, ANN_TAG, PAPER_TAG,
+    AGENT_PATH, ANNOTATIONZ_PATH, ANN_TAG, PAPER_TAG,
 };
 
 entry_defs![
@@ -45,11 +45,8 @@ fn upload_paper((paper, agent_pk): (Paper, AgentPubKey)) -> ExternResult<(EntryH
         LinkTag::new(PAPER_TAG),
     )?;
 
-    // agent SM
-    // retrieve the agent pk from the above paper create headerhash?
-    // call `step_sm` with `(+ 1)` targeting that
-    // assume that the SM has already been initialized somewhere...
-    // maybe the UI has to do that, because it'll need the agent id.
+    // increment agent SM
+    step_sm_path_remote((AGENT_PATH.into(), agent_b64, "1".into()))?;
 
     Ok((paper_eh, paper_hh))
 }
