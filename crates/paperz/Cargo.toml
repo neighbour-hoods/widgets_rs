@@ -11,7 +11,7 @@ serde = "1"
 chrono = "=0.4.6"
 
 # common = { path = "../../../social_sensemaker/crates/common" }
-common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
+common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "cf91a205def15598e7e3d7aee898d106c13a91d0" }
 rep_lang_core = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
 rep_lang_runtime = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "c321016c1d3d9fe548a1df1c47e1748d5bff6f87", features = ["hc"] }
 social_sensemaker_core = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }

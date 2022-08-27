@@ -5,16 +5,22 @@ use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
 
 // use social_sensemaker_core::SENSEMAKER_ZOME_NAME;
+// TODO figure out how to depend on `common` without getting:
+// ```
+// ✘ [ERROR] Could not resolve "env"
+// ```
+// use common::vec_u8_b64_encode;
 
 use holochain_client_wrapper::{
-    AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd, AppWsCmdResponse,
-    CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw, SerializeToJsObj,
+    agent_pk_to_vec_u8, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd,
+    AppWsCmdResponse, CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
+    SerializeToJsObj,
 };
 use paperz_core::{types::Paper, AGENT_PATH, PAPERZ_ZOME_NAME};
 use widget_helpers::file_upload::{FileBytes, FileUploadApp};
 
 use crate::js_ser_de::*;
-//
+
 // TODO get rid of this once we're using proper sensemaker app name
 const TEST_APP_NAME: &str = "test-app";
 
@@ -28,6 +34,7 @@ pub enum Msg {
     SensemakerPresent(bool),
     SmInitSubmit(String),
     SmCompSubmit(String),
+    SmDataInit,
 }
 
 pub enum WsMsg<WSCMD, WSCMDRESP> {
@@ -102,10 +109,6 @@ impl Component for Model {
             STARTER_SM_INIT_EXPR_STRING.into(),
             STARTER_SM_COMP_EXPR_STRING.into(),
         );
-        ctx.link()
-            .send_future(async move { Msg::SmInitSubmit(STARTER_SM_INIT_EXPR_STRING.into()) });
-        ctx.link()
-            .send_future(async move { Msg::SmCompSubmit(STARTER_SM_COMP_EXPR_STRING.into()) });
 
         let admin_ws: AdminWebsocket = props.admin_ws_js.clone().into();
         let admin_ws_ = admin_ws.clone();
@@ -241,6 +244,34 @@ impl Component for Model {
                 self.paper_sm.1 = expr_str;
                 true
             }
+
+            Msg::SmDataInit => {
+                let app_ws_ = self.app_ws.clone();
+                let cell_id_ = self.paperz_cell_id.clone();
+                let payload: (String, String) = (
+                    AGENT_PATH.into(),
+                    base64::encode(agent_pk_to_vec_u8(self.paperz_cell_id.1.clone())),
+                );
+                ctx.link().send_future(async move {
+                    let cmd = AppWsCmd::CallZome {
+                        cell_id: cell_id_.clone(),
+                        zome_name: PAPERZ_ZOME_NAME.into(),
+                        fn_name: "init_agent_sm_data".into(),
+                        payload: payload.serialize_to_js_obj(),
+                        provenance: cell_id_.1.clone(),
+                        cap: "".into(),
+                    };
+                    let resp = app_ws_.call(cmd).await;
+                    match resp {
+                        Ok(AppWsCmdResponse::CallZome(val)) => {
+                            Msg::Log(format!("init_agent_sm_data: {:?}", val))
+                        }
+                        Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                        Err(err) => Msg::Error(format!("err: {:?}", err)),
+                    }
+                });
+                false
+            }
         }
     }
 
@@ -285,6 +316,8 @@ impl Component for Model {
                 { self.view_string_input(ctx.link(), sm_init_handler, "sm_init".into(), "paperz/agent sm_init".into(), self.paper_sm.0.clone()) }
                 <br/>
                 { self.view_string_input(ctx.link(), sm_comp_handler, "sm_comp".into(), "paperz/agent sm_comp".into(), self.paper_sm.1.clone()) }
+                <br/>
+                <button onclick={ctx.link().callback(move |_| Msg::SmDataInit)}>{ "initialize_sm_data" }</button>
                 <br/>
                 <FileUploadApp {content_name} {on_file_upload} />
                 <br/>

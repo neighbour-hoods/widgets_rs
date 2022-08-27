@@ -2,8 +2,9 @@ use hdk::prelude::{holo_hash::DnaHash, *};
 
 use common::{
     compose_entry_hash_path, get_latest_linked_entry, remote_get_sensemaker_entry_by_path,
-    remote_initialize_sm_data, remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm,
-    sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
+    remote_initialize_sm_data, remote_initialize_sm_data_path,
+    remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm, sensemaker_cell_id_anchor,
+    sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
@@ -125,28 +126,34 @@ fn create_annotation(annotation: Annotation) -> ExternResult<(EntryHash, HeaderH
 }
 
 #[hdk_extern]
-fn get_state_machine_data(
+fn init_agent_sm_data(payload: (String, String)) -> ExternResult<()> {
+    let cell_id = get_sensemaker_cell_id(())?;
+    remote_initialize_sm_data_path(cell_id, None, payload)
+}
+
+#[hdk_extern]
+fn get_sm_data(
     target_eh: EntryHash,
 ) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
     let path_string = compose_entry_hash_path(&ANNOTATIONZ_PATH.into(), target_eh);
-    get_state_machine_generic(path_string, SM_DATA_TAG.to_string())
+    get_sm_generic(path_string, SM_DATA_TAG.to_string())
 }
 
 #[hdk_extern]
-fn get_state_machine_init(
+fn get_sm_init(
     path_string: String,
 ) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    get_state_machine_generic(path_string, SM_INIT_TAG.into())
+    get_sm_generic(path_string, SM_INIT_TAG.into())
 }
 
 #[hdk_extern]
-fn get_state_machine_comp(
+fn get_sm_comp(
     path_string: String,
 ) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    get_state_machine_generic(path_string, SM_COMP_TAG.into())
+    get_sm_generic(path_string, SM_COMP_TAG.into())
 }
 
-fn get_state_machine_generic(
+fn get_sm_generic(
     path_string: String,
     link_tag_string: String,
 ) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
