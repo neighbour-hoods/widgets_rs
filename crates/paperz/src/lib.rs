@@ -12,6 +12,7 @@ use paperz_core::types::{Annotation, Paper};
 pub const PAPER_TAG: &str = "paperz_paper";
 pub const ANN_TAG: &str = "annotationz";
 pub const ANNOTATIONZ_PATH: &str = "widget.paperz.annotationz";
+pub const AGENT_PATH: &str = "widget.paperz.agent";
 
 entry_defs![
     Paper::entry_def(),
@@ -41,6 +42,12 @@ fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
         LinkType(0),
         LinkTag::new(PAPER_TAG),
     )?;
+
+    // agent SM
+    // retrieve the agent pk from the above paper create headerhash?
+    // call `step_sm` with `(+ 1)` targeting that
+    // assume that the SM has already been initialized somewhere...
+    // maybe the UI has to do that, because it'll need the agent id.
 
     Ok((paper_eh, paper_hh))
 }
