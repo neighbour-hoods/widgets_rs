@@ -52,7 +52,7 @@ pub struct Model {
 }
 
 const STARTER_SM_INIT_EXPR_STRING: &str = "0";
-const STARTER_SM_COMP_EXPR_STRING: &str = "(+ 1)";
+const STARTER_SM_COMP_EXPR_STRING: &str = "+";
 
 #[derive(Properties, PartialEq)]
 pub struct ModelProps {
@@ -97,6 +97,7 @@ impl Component for Model {
             }
         });
 
+        // state machine setup
         let paper_sm: (String, String) = (
             STARTER_SM_INIT_EXPR_STRING.into(),
             STARTER_SM_COMP_EXPR_STRING.into(),
