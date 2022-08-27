@@ -77,28 +77,22 @@ fn get_all_memez(_: ()) -> ExternResult<Vec<(EntryHash, Meme)>> {
 }
 
 #[hdk_extern]
-fn get_state_machine_data(
-    target_eh: EntryHash,
-) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    let path_string = compose_entry_hash_path(&MEMEZ_PATH.into(), target_eh);
-    get_state_machine_generic(path_string, SM_DATA_TAG.to_string())
+fn get_sm_data(target_eh: EntryHash) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+    let path_string = compose_entry_hash_path(&ANNOTATIONZ_PATH.into(), target_eh);
+    get_sm_generic(path_string, SM_DATA_TAG.to_string())
 }
 
 #[hdk_extern]
-fn get_state_machine_init(
-    path_string: String,
-) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    get_state_machine_generic(path_string, SM_INIT_TAG.into())
+fn get_sm_init(path_string: String) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+    get_sm_generic(path_string, SM_INIT_TAG.into())
 }
 
 #[hdk_extern]
-fn get_state_machine_comp(
-    path_string: String,
-) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    get_state_machine_generic(path_string, SM_COMP_TAG.into())
+fn get_sm_comp(path_string: String) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+    get_sm_generic(path_string, SM_COMP_TAG.into())
 }
 
-fn get_state_machine_generic(
+fn get_sm_generic(
     path_string: String,
     link_tag_string: String,
 ) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
@@ -108,13 +102,13 @@ fn get_state_machine_generic(
 
 #[hdk_extern]
 /// set the sm_init state for the path_string to the `rep_lang` interpretation of `expr_str`
-pub fn set_state_machine_init((path_string, expr_str): (String, String)) -> ExternResult<bool> {
+pub fn set_sm_init((path_string, expr_str): (String, String)) -> ExternResult<bool> {
     set_sensemaker_entry(path_string, SM_INIT_TAG.into(), expr_str)
 }
 
 #[hdk_extern]
 /// set the sm_comp state for the path_string to the `rep_lang` interpretation of `expr_str`
-pub fn set_state_machine_comp((path_string, expr_str): (String, String)) -> ExternResult<bool> {
+pub fn set_sm_comp((path_string, expr_str): (String, String)) -> ExternResult<bool> {
     set_sensemaker_entry(path_string, SM_COMP_TAG.into(), expr_str)
 }
 
@@ -135,6 +129,12 @@ fn set_sensemaker_entry(
 #[hdk_extern]
 fn step_sm_remote((path_string, entry_hash, act): (String, EntryHash, String)) -> ExternResult<()> {
     let cell_id = get_sensemaker_cell_id(())?;
-    remote_step_sm(cell_id, None, (path_string, entry_hash, act))?;
-    Ok(())
+    remote_step_sm(cell_id, None, (path_string, entry_hash, act))
+}
+
+// TODO figure out how to automate / streamline all these high-indirection methods
+#[hdk_extern]
+fn step_sm_path_remote(payload: (String, String, String)) -> ExternResult<()> {
+    let cell_id = get_sensemaker_cell_id(())?;
+    remote_step_sm_path(cell_id, None, payload)
 }
