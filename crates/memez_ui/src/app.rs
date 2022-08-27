@@ -51,10 +51,12 @@ pub struct Model {
     sensemaker_present: Option<bool>,
     /// (sm_init_expr_string, sm_comp_expr_string)
     meme_sm: (String, String),
+    feed_score_comp: String,
 }
 
 const STARTER_SM_INIT_EXPR_STRING: &str = "0";
 const STARTER_SM_COMP_EXPR_STRING: &str = "+";
+const STARTER_FEED_SCORE_COMP: &str = "+";
 
 #[derive(Properties, PartialEq)]
 pub struct ModelProps {
@@ -78,7 +80,8 @@ impl Component for Model {
                 cell_id: cell_id_.clone(),
                 zome_name: MEMEZ_ZOME_NAME.into(),
                 fn_name: "get_all_memez".into(),
-                payload: JsValue::NULL,
+                payload: (STARTER_FEED_SCORE_COMP.to_string(), cell_id_.1.clone())
+                    .serialize_to_js_obj(),
                 provenance: cell_id_.1.clone(),
                 cap: "".into(),
             };
@@ -123,6 +126,7 @@ impl Component for Model {
             memez: Vec::new(),
             sensemaker_present: None,
             meme_sm,
+            feed_score_comp: "+".into(),
         }
     }
 

@@ -6,17 +6,19 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
+base64 = "0.13.0"
 hdk = "0.0.136"
 serde = "1"
 chrono = "=0.4.6"
 
 # common = { path = "../../../social_sensemaker/crates/common" }
-common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "cf91a205def15598e7e3d7aee898d106c13a91d0" }
+common = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "2574f34e2799a85472c898e82595e5e5f831a24d" }
 rep_lang_core = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "364213a6b1bca2f3ebdedb9a043c0b864e4d6a49", features = ["hc"] }
 rep_lang_runtime = { git = "https://github.com/neighbour-hoods/rep_lang.git", rev = "364213a6b1bca2f3ebdedb9a043c0b864e4d6a49", features = ["hc"] }
 social_sensemaker_core = { git = "https://github.com/neighbour-hoods/social_sensemaker.git", rev = "19753e03347ab6cf13e9165afc8909bfc33fac76" }
 
 memez_core = { path = "../memez_core" }
+paperz_core = { path = "../paperz_core" }
 
 [lib]
 path = "src/lib.rs"
