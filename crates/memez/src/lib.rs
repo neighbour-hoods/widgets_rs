@@ -3,14 +3,12 @@ use hdk::prelude::{holo_hash::DnaHash, *};
 use common::{
     compose_entry_hash_path, get_latest_linked_entry, remote_get_sensemaker_entry_by_path,
     remote_initialize_sm_data, remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm,
-    sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
+    remote_step_sm_path, sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId,
+    SensemakerEntry,
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
-use memez_core::types::Meme;
-
-pub const MEME_TAG: &str = "memez_meme";
-pub const MEMEZ_PATH: &str = "widget.memez.memez";
+use memez_core::{types::Meme, MEMEZ_PATH, MEME_TAG};
 
 entry_defs![
     Meme::entry_def(),
@@ -74,12 +72,6 @@ fn get_all_memez(_: ()) -> ExternResult<Vec<(EntryHash, Meme)>> {
         None => Ok(memez),
         Some(err) => Err(WasmError::Guest(format!("get_all_memez: {:?}", err))),
     }
-}
-
-#[hdk_extern]
-fn get_sm_data(target_eh: EntryHash) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    let path_string = compose_entry_hash_path(&ANNOTATIONZ_PATH.into(), target_eh);
-    get_sm_generic(path_string, SM_DATA_TAG.to_string())
 }
 
 #[hdk_extern]
