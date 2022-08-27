@@ -4,7 +4,7 @@ use web_sys::HtmlInputElement as InputElement;
 use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
 
-use social_sensemaker_core::SENSEMAKER_ZOME_NAME;
+// use social_sensemaker_core::SENSEMAKER_ZOME_NAME;
 
 use holochain_client_wrapper::{
     AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd, AppWsCmdResponse,
@@ -27,6 +27,8 @@ pub enum Msg {
     ZomeCallResponse(ZomeCallResponse),
     BrowserUploadedPaper(Paper),
     SensemakerPresent(bool),
+    SmInitSubmit(String),
+    SmCompSubmit(String),
 }
 
 pub enum WsMsg<WSCMD, WSCMDRESP> {
@@ -46,7 +48,12 @@ pub struct Model {
     paperz: Vec<(EntryHashRaw, Paper)>,
     /// None means we don't know yet (no response). for `Some(b)`, `b == True` indicates presence.
     sensemaker_present: Option<bool>,
+    /// (sm_init_expr_string, sm_comp_expr_string)
+    paper_sm: (String, String),
 }
+
+const STARTER_SM_INIT_EXPR_STRING: &str = "0";
+const STARTER_SM_COMP_EXPR_STRING: &str = "(+ 1)";
 
 #[derive(Properties, PartialEq)]
 pub struct ModelProps {
@@ -107,6 +114,10 @@ impl Component for Model {
             paperz_cell_id: cell_id.clone(),
             paperz: Vec::new(),
             sensemaker_present: None,
+            paper_sm: (
+                STARTER_SM_INIT_EXPR_STRING.into(),
+                STARTER_SM_COMP_EXPR_STRING.into(),
+            ),
         }
     }
 
@@ -207,6 +218,16 @@ impl Component for Model {
                 self.sensemaker_present = Some(sensemaker_present);
                 true
             }
+
+            Msg::SmInitSubmit(expr_str) => {
+                self.paper_sm.0 = expr_str;
+                true
+            }
+
+            Msg::SmCompSubmit(expr_str) => {
+                self.paper_sm.1 = expr_str;
+                true
+            }
         }
     }
 
@@ -223,6 +244,10 @@ impl Component for Model {
                 </div>
             },
         };
+        //
+        let sm_init_handler = |input: String| Ok(Msg::SmInitSubmit(input));
+        let sm_comp_handler = |input: String| Ok(Msg::SmCompSubmit(input));
+        //
         let content_name = "paper";
         let on_file_upload: Callback<FileBytes> = {
             let link = ctx.link().clone();
@@ -244,6 +269,10 @@ impl Component for Model {
                 <br/>
                 {sensemaker_present_html}
                 <br/>
+                { self.view_string_input(ctx.link(), sm_init_handler, "sm_init".into(), "paperz/agent sm_init".into(), self.paper_sm.0.clone()) }
+                <br/>
+                { self.view_string_input(ctx.link(), sm_comp_handler, "sm_comp".into(), "paperz/agent sm_comp".into(), self.paper_sm.1.clone()) }
+                <br/>
                 <FileUploadApp {content_name} {on_file_upload} />
                 <br/>
                 <h3 class="subtitle">{"paperz"}</h3>
@@ -259,7 +288,8 @@ impl Model {
         link: &Scope<Self>,
         f: F,
         class: String,
-        placeholder: String,
+        label: String,
+        value: String,
     ) -> Html
     where
         F: Fn(String) -> Result<Msg, String> + 'static,
@@ -282,11 +312,14 @@ impl Model {
             }
         });
         html! {
-            <input
-                {class}
-                {placeholder}
-                {onkeypress}
-            />
+            <div>
+                <label>{format!("{}: ", label)}</label>
+                <input
+                    {class}
+                    {value}
+                    {onkeypress}
+                />
+            </div>
         }
     }
 }
