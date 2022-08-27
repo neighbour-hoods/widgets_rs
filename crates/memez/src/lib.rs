@@ -48,6 +48,11 @@ fn upload_meme(meme: Meme) -> ExternResult<(EntryHash, HeaderHash)> {
 }
 
 #[hdk_extern]
+fn clap_for_meme(meme_eh: EntryHash) -> ExternResult<()> {
+    todo!()
+}
+
+#[hdk_extern]
 fn get_all_memez(_: ()) -> ExternResult<Vec<(EntryHash, Meme)>> {
     let meme_entry_links = get_links(meme_anchor()?, Some(LinkTag::new(MEME_TAG)))?;
     let mut memez: Vec<(EntryHash, Meme)> = Vec::new();
