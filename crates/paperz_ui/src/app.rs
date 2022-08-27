@@ -8,14 +8,13 @@ use yew::{html::Scope, prelude::*};
 
 use holochain_client_wrapper::{
     AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd, AppWsCmdResponse,
-    CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
+    CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw, SerializeToJsObj,
 };
-use paperz_core::types::Paper;
+use paperz_core::{types::Paper, AGENT_PATH, PAPERZ_ZOME_NAME};
 use widget_helpers::file_upload::{FileBytes, FileUploadApp};
 
 use crate::js_ser_de::*;
-
-const PAPERZ_ZOME_NAME: &str = "paperz_main_zome";
+//
 // TODO get rid of this once we're using proper sensemaker app name
 const TEST_APP_NAME: &str = "test-app";
 
@@ -69,9 +68,11 @@ impl Component for Model {
     fn create(ctx: &Context<Self>) -> Self {
         let props = ctx.props();
         let cell_id = CellId::deserialize_from_js_obj(props.cell_id_js.clone());
-        let cell_id_ = cell_id.clone();
         let app_ws: AppWebsocket = props.app_ws_js.clone().into();
-        let app_ws_: AppWebsocket = app_ws.clone();
+
+        // get_all_paperz
+        let app_ws_ = app_ws.clone();
+        let cell_id_ = cell_id.clone();
         ctx.link().send_future(async move {
             let cmd = AppWsCmd::CallZome {
                 cell_id: cell_id_.clone(),
@@ -95,6 +96,33 @@ impl Component for Model {
                 Err(err) => Msg::Error(format!("err: {:?}", err)),
             }
         });
+
+        let paper_sm: (String, String) = (
+            STARTER_SM_INIT_EXPR_STRING.into(),
+            STARTER_SM_COMP_EXPR_STRING.into(),
+        );
+
+        // set sm_init
+        let app_ws_ = app_ws.clone();
+        let cell_id_ = cell_id.clone();
+        let paper_sm_ = paper_sm.clone();
+        ctx.link().send_future(async move {
+            let cmd = AppWsCmd::CallZome {
+                cell_id: cell_id_.clone(),
+                zome_name: PAPERZ_ZOME_NAME.into(),
+                fn_name: "set_sm_init".into(),
+                payload: (AGENT_PATH.to_string(), paper_sm_.0).serialize_to_js_obj(),
+                provenance: cell_id_.1.clone(),
+                cap: "".into(),
+            };
+            let resp = app_ws_.call(cmd).await;
+            match resp {
+                Ok(AppWsCmdResponse::CallZome(val)) => Msg::Log(format!("set_sm_init: {:?}", val)),
+                Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                Err(err) => Msg::Error(format!("err: {:?}", err)),
+            }
+        });
+
         let admin_ws: AdminWebsocket = props.admin_ws_js.clone().into();
         let admin_ws_ = admin_ws.clone();
         ctx.link().send_future(async move {
@@ -114,10 +142,7 @@ impl Component for Model {
             paperz_cell_id: cell_id.clone(),
             paperz: Vec::new(),
             sensemaker_present: None,
-            paper_sm: (
-                STARTER_SM_INIT_EXPR_STRING.into(),
-                STARTER_SM_COMP_EXPR_STRING.into(),
-            ),
+            paper_sm,
         }
     }
 

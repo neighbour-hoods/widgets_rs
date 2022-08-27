@@ -7,12 +7,10 @@ use common::{
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
-use paperz_core::types::{Annotation, Paper};
-
-pub const PAPER_TAG: &str = "paperz_paper";
-pub const ANN_TAG: &str = "annotationz";
-pub const ANNOTATIONZ_PATH: &str = "widget.paperz.annotationz";
-pub const AGENT_PATH: &str = "widget.agent.paperz";
+use paperz_core::{
+    types::{Annotation, Paper},
+    ANNOTATIONZ_PATH, ANN_TAG, PAPER_TAG,
+};
 
 entry_defs![
     Paper::entry_def(),
@@ -158,13 +156,13 @@ fn get_state_machine_generic(
 
 #[hdk_extern]
 /// set the sm_init state for the path_string to the `rep_lang` interpretation of `expr_str`
-pub fn set_state_machine_init((path_string, expr_str): (String, String)) -> ExternResult<bool> {
+pub fn set_sm_init((path_string, expr_str): (String, String)) -> ExternResult<bool> {
     set_sensemaker_entry(path_string, SM_INIT_TAG.into(), expr_str)
 }
 
 #[hdk_extern]
 /// set the sm_comp state for the path_string to the `rep_lang` interpretation of `expr_str`
-pub fn set_state_machine_comp((path_string, expr_str): (String, String)) -> ExternResult<bool> {
+pub fn set_sm_comp((path_string, expr_str): (String, String)) -> ExternResult<bool> {
     set_sensemaker_entry(path_string, SM_COMP_TAG.into(), expr_str)
 }
 
