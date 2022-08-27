@@ -6,6 +6,7 @@ use common::{
     remote_step_sm_path, sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId,
     SensemakerEntry,
 };
+use rep_lang_runtime::eval::{FlatValue, Value};
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
 use memez_core::{types::Meme, MEMEZ_PATH, MEME_TAG};
@@ -53,16 +54,35 @@ fn clap_for_meme(meme_eh: EntryHash) -> ExternResult<()> {
 }
 
 #[hdk_extern]
-fn get_all_memez(_: ()) -> ExternResult<Vec<(EntryHash, Meme)>> {
+fn meme_clap_count(meme_eh: EntryHash) -> ExternResult<Option<i64>> {
+    let opt_eh_se = get_sm_data(meme_eh)?;
+    Ok(opt_eh_se.and_then(|(_eh, se)| match se.output_flat_value {
+        FlatValue(Value::VInt(x)) => Some(x),
+        _ => None,
+    }))
+}
+
+#[hdk_extern]
+fn get_all_memez(_: ()) -> ExternResult<Vec<(EntryHash, Meme, i64)>> {
     let meme_entry_links = get_links(meme_anchor()?, Some(LinkTag::new(MEME_TAG)))?;
-    let mut memez: Vec<(EntryHash, Meme)> = Vec::new();
+    let mut memez: Vec<(EntryHash, Meme, i64)> = Vec::new();
     let mut opt_err = None;
     for lnk in meme_entry_links {
-        let res: ExternResult<(EntryHash, Meme)> = {
+        let res: ExternResult<(EntryHash, Meme, i64)> = {
             let meme_eh = lnk.target.into_entry_hash().expect("should be an Entry.");
             let (meme, _hh) =
                 util::try_get_and_convert_with_hh(meme_eh.clone(), GetOptions::content())?;
-            Ok((meme_eh, meme))
+            let score = match meme_clap_count(meme_eh.clone())? {
+                None => {
+                    debug!("score is None!");
+                    0
+                }
+                Some(x) => {
+                    debug!("x: {}", x);
+                    x
+                }
+            };
+            Ok((meme_eh, meme, score))
         };
 
         match res {
@@ -77,6 +97,12 @@ fn get_all_memez(_: ()) -> ExternResult<Vec<(EntryHash, Meme)>> {
         None => Ok(memez),
         Some(err) => Err(WasmError::Guest(format!("get_all_memez: {:?}", err))),
     }
+}
+
+#[hdk_extern]
+fn get_sm_data(target_eh: EntryHash) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+    let path_string = compose_entry_hash_path(&MEMEZ_PATH.into(), target_eh);
+    get_sm_generic(path_string, SM_DATA_TAG.to_string())
 }
 
 #[hdk_extern]

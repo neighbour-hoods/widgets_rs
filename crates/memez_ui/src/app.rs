@@ -37,7 +37,7 @@ pub enum WsMsg<WSCMD, WSCMDRESP> {
 }
 
 pub enum ZomeCallResponse {
-    Memes(Vec<(EntryHashRaw, Meme)>),
+    Memes(Vec<(EntryHashRaw, Meme, i64)>),
     UploadMeme(EntryHashRaw, Meme),
 }
 
@@ -45,7 +45,7 @@ pub struct Model {
     admin_ws: AdminWebsocket,
     app_ws: AppWebsocket,
     memez_cell_id: CellId,
-    memez: Vec<(EntryHashRaw, Meme)>,
+    memez: Vec<(EntryHashRaw, Meme, i64)>,
     /// None means we don't know yet (no response). for `Some(b)`, `b == True` indicates presence.
     sensemaker_present: Option<bool>,
     /// (sm_init_expr_string, sm_comp_expr_string)
@@ -85,9 +85,9 @@ impl Component for Model {
             match resp {
                 Ok(AppWsCmdResponse::CallZome(val)) => {
                     Msg::ZomeCallResponse(ZomeCallResponse::Memes(
-                        MemeEhVec::deserialize_from_js_obj_(val)
+                        MemeEhScoreVec::deserialize_from_js_obj_(val)
                             .into_iter()
-                            .map(|pair| pair.into())
+                            .map(|x| x.into())
                             .collect(),
                     ))
                 }
@@ -188,7 +188,7 @@ impl Component for Model {
             }
 
             Msg::ZomeCallResponse(ZomeCallResponse::UploadMeme(meme_eh, meme)) => {
-                self.memez.push((meme_eh, meme));
+                self.memez.push((meme_eh, meme, 0));
                 true
             }
 
@@ -283,7 +283,12 @@ impl Component for Model {
                 <FileUploadApp {content_name} {on_file_upload} />
                 <br/>
                 <h3 class="subtitle">{"memez"}</h3>
-                { for self.memez.iter().map(|pair| html!{ <img src={mk_meme_src(pair.1.clone())} width="95%" height="500px" /> }) }
+                { for self.memez.iter().map(|triple| html!{
+                    <div>
+                        <img src={mk_meme_src(triple.1.clone())} width="95%" height="500px" />
+                        <p>{ format!("score: {}", triple.2.clone()) }</p>
+                    </div>
+                }) }
             </div>
         }
     }
