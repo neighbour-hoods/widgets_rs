@@ -223,6 +223,31 @@ impl Component for Model {
                         Err(err) => Msg::Error(format!("err: {:?}", err)),
                     }
                 });
+                let ws = self.app_ws.clone();
+                let cell_id = self.paperz_cell_id.clone();
+                ctx.link().send_future(async move {
+                    let typed_payload: (String, String, String) = (
+                        AGENT_PATH.into(),
+                        base64::encode(agent_pk_to_vec_u8(cell_id.1.clone())),
+                        "1".into(),
+                    );
+                    let cmd = AppWsCmd::CallZome {
+                        cell_id: cell_id.clone(),
+                        zome_name: PAPERZ_ZOME_NAME.into(),
+                        fn_name: "step_sm_path_remote".into(),
+                        payload: typed_payload.serialize_to_js_obj(),
+                        provenance: cell_id.1.clone(),
+                        cap: "".into(),
+                    };
+                    let resp = ws.call(cmd).await;
+                    match resp {
+                        Ok(AppWsCmdResponse::CallZome(val)) => {
+                            Msg::Log(format!("step_sm_path_remote: {:?}", val))
+                        }
+                        Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
+                        Err(err) => Msg::Error(format!("err: {:?}", err)),
+                    }
+                });
                 true
             }
 
