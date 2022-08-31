@@ -28,6 +28,15 @@
     "paperz:pack": "hc dna pack happs/paperz && hc app pack happs/paperz",
     "paperz:run": "hc sandbox generate happs/paperz && WASM_LOG=debug RUST_LOG=error RUST_BACKTRACE=full hc sandbox -f=9000 run -l -p 9999",
     "paperz:redo": "npm run paperz:build && npm run paperz:pack && npm run paperz:run",
+
+    "trailz_ui:serve": "miniserve -p 8083 ./crates/trailz_ui",
+    "trailz_ui:build": "wasm-pack build ./crates/trailz_ui --target web && ./node_modules/.bin/esbuild ./crates/trailz_ui/main.js --format=iife --bundle --outfile=./crates/trailz_ui/pkg/bundle.js",
+    "trailz:build": "cargo build -p trailz --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/debug/trailz.wasm ./happs/trailz",
+    "trailz:build-release": "cargo build -p trailz --release --target wasm32-unknown-unknown && cp $CARGO_TARGET_DIR/wasm32-unknown-unknown/release/trailz.wasm ./happs/trailz",
+    "trailz:pack": "hc dna pack happs/trailz && hc app pack happs/trailz",
+    "trailz:run": "hc sandbox generate happs/trailz && WASM_LOG=debug RUST_LOG=error RUST_BACKTRACE=full hc sandbox -f=9000 run -l -p 9999",
+    "trailz:redo": "npm run trailz:build && npm run trailz:pack && npm run trailz:run",
+
     "hc:mk-sensemaker": "nix build .#social_sensemaker --impure",
     "hc:pg": "npx @holochain-playground/cli ws://localhost:9000"
   }

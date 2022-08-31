@@ -1,0 +1,8 @@
+manifest_version: "1"
+name: "trailz"
+uuid: ""
+properties: null
+zomes:
+  - name: trailz_main_zome
+    bundled: "./trailz.wasm"
+    #    properties:

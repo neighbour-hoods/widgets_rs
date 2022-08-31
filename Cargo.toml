@@ -8,4 +8,6 @@ members = [
   "crates/memez_ui",
   "crates/paperz",
   "crates/paperz_ui",
+  "crates/trailz",
+  "crates/trailz_ui",
 ]
