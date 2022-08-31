@@ -1,4 +1,5 @@
 mod app;
+mod bindings;
 
 use wasm_bindgen::prelude::*;
 use web_sys::Element;
