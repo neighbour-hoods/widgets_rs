@@ -57,12 +57,14 @@ impl Component for Model {
             let navigator = window.navigator();
             let geolocation = navigator.geolocation()?;
             console_log!("geolocation {:?}", geolocation.clone());
-            let geo_success_closure = Closure::new(|gp: GeolocationPosition| {
-    console_log!("gp {:?}", gp);
-            });
-            geolocation
-                .clone()
-                .watch_position_with_error_callback(geo_success_closure.as_ref().unchecked_ref(), None)?;
+            let geo_success_closure: Closure<dyn FnMut(GeolocationPosition)> =
+                Closure::new(|gp: GeolocationPosition| {
+                    console_log!("gp {:?}", gp);
+                });
+            geolocation.clone().watch_position_with_error_callback(
+                geo_success_closure.as_ref().unchecked_ref(),
+                None,
+            )?;
             Ok(geolocation)
         };
         let opt_geolocation = match geo_res() {
