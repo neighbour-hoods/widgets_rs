@@ -19,15 +19,19 @@
       in
 
       {
-        devShell = nh-nix-env.shells.${system}.holochainDevShell {
-          extraBuildInputs = with pkgs; [
-            nodejs
-            nodePackages.webpack
-            nodePackages.webpack-cli
-            openssl
-            pkgconfig
-            wasm-pack
-          ];
+        devShells = {
+          default = nh-nix-env.shells.${system}.holochainDevShell {
+            extraBuildInputs = with pkgs; [
+              nodejs
+              nodePackages.webpack
+              nodePackages.webpack-cli
+              openssl
+              pkgconfig
+              wasm-pack
+            ];
+          };
+
+          runOnly = nh-nix-env.shells.${system}.holochainRunShell {};
         };
 
         packages.social_sensemaker = social_sensemaker.packages.${system}.social_sensemaker-naersk;
