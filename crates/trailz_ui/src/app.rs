@@ -20,6 +20,7 @@ pub enum Msg {
     AppWs(WsMsg<AppWsCmd, AppWsCmdResponse>),
     Log(String),
     Error(String),
+    GpUpdate(GeolocationPosition),
 }
 
 pub enum WsMsg<WSCMD, WSCMDRESP> {
@@ -32,6 +33,8 @@ pub struct Model {
     app_ws: AppWebsocket,
     cell_id: CellId,
     opt_geolocation: Option<Geolocation>,
+    opt_gp: Option<GeolocationPosition>,
+    gp_update_count: u64,
 }
 
 #[derive(Properties, PartialEq)]
@@ -53,13 +56,14 @@ impl Component for Model {
 
         // geolocation
         let geo_res = move || -> Result<Geolocation, JsValue> {
+            let link = ctx.link().clone();
             let window = web_sys::window().unwrap();
             let navigator = window.navigator();
             let geolocation = navigator.geolocation()?;
             console_log!("geolocation {:?}", geolocation.clone());
             let geo_success_closure: Closure<dyn FnMut(GeolocationPosition)> =
-                Closure::new(|gp: GeolocationPosition| {
-                    console_log!("gp {:?}", gp);
+                Closure::new(move |gp: GeolocationPosition| {
+                    link.send_future(async move { Msg::GpUpdate(gp) });
                 });
             geolocation.clone().watch_position_with_error_callback(
                 geo_success_closure.as_ref().unchecked_ref(),
@@ -80,6 +84,8 @@ impl Component for Model {
             app_ws,
             cell_id,
             opt_geolocation,
+            opt_gp: None,
+            gp_update_count: 0,
         }
     }
 
@@ -138,13 +144,32 @@ impl Component for Model {
                 console_log!("Log: {}", err);
                 false
             }
+
+            Msg::GpUpdate(gp) => {
+                self.opt_gp = Some(gp);
+                self.gp_update_count += 1;
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let gp_rendered: String = match &self.opt_gp {
+            None => "no gp info".into(),
+            Some(gp) => format!(
+                "coords: ({},{})\
+                                \ntimestamp: {}",
+                gp.coords().latitude(),
+                gp.coords().longitude(),
+                gp.timestamp()
+            ),
+        };
+        let gp_update_count_rendered: String = self.gp_update_count.to_string();
         html! {
             <div>
                 <p>{"hello, trailz 👋"}</p>
+                <p>{gp_rendered}</p>
+                <p>{gp_update_count_rendered}</p>
             </div>
         }
     }
