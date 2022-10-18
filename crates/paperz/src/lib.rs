@@ -2,16 +2,16 @@ use hdk::prelude::{holo_hash::DnaHash, *};
 
 use common::{
     compose_entry_hash_path, get_latest_linked_entry, remote_get_sensemaker_entry_by_path,
-    remote_initialize_sm_data, remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm,
+    remote_initialize_sm_data, remote_initialize_sm_data_path,
+    remote_set_sensemaker_entry_parse_rl_expr, remote_step_sm, remote_step_sm_path,
     sensemaker_cell_id_anchor, sensemaker_cell_id_fns, util, SensemakerCellId, SensemakerEntry,
 };
 use social_sensemaker_core::{OWNER_TAG, SM_COMP_TAG, SM_DATA_TAG, SM_INIT_TAG};
 
-use paperz_core::types::{Annotation, Paper};
-
-pub const PAPER_TAG: &str = "paperz_paper";
-pub const ANN_TAG: &str = "annotationz";
-pub const ANNOTATIONZ_PATH: &str = "widget.paperz.annotationz";
+use paperz_core::{
+    types::{Annotation, Paper},
+    AGENT_PATH, ANNOTATIONZ_PATH, ANN_TAG, PAPER_TAG,
+};
 
 entry_defs![
     Paper::entry_def(),
@@ -27,11 +27,14 @@ fn paper_anchor() -> ExternResult<EntryHash> {
 }
 
 #[hdk_extern]
-fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
+fn upload_paper((paper, agent_pk): (Paper, AgentPubKey)) -> ExternResult<(EntryHash, HeaderHash)> {
     debug!(
         "upload_paper: received input of length {}",
         paper.blob_str.len()
     );
+    debug!("upload_paper: agent_pk: {}", agent_pk.clone());
+    let agent_b64: String = base64::encode(agent_pk.clone().into_inner());
+    debug!("upload_paper: agent_b64: {}", agent_b64);
 
     let paper_hh = create_entry(&paper)?;
     let paper_eh = hash_entry(&paper)?;
@@ -41,6 +44,9 @@ fn upload_paper(paper: Paper) -> ExternResult<(EntryHash, HeaderHash)> {
         LinkType(0),
         LinkTag::new(PAPER_TAG),
     )?;
+
+    // increment agent SM
+    step_sm_path_remote((AGENT_PATH.into(), agent_b64, "1".into()))?;
 
     Ok((paper_eh, paper_hh))
 }
@@ -120,28 +126,28 @@ fn create_annotation(annotation: Annotation) -> ExternResult<(EntryHash, HeaderH
 }
 
 #[hdk_extern]
-fn get_state_machine_data(
-    target_eh: EntryHash,
-) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+fn init_agent_sm_data(payload: (String, String)) -> ExternResult<()> {
+    let cell_id = get_sensemaker_cell_id(())?;
+    remote_initialize_sm_data_path(cell_id, None, payload)
+}
+
+#[hdk_extern]
+fn get_sm_data(target_eh: EntryHash) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
     let path_string = compose_entry_hash_path(&ANNOTATIONZ_PATH.into(), target_eh);
-    get_state_machine_generic(path_string, SM_DATA_TAG.to_string())
+    get_sm_generic(path_string, SM_DATA_TAG.to_string())
 }
 
 #[hdk_extern]
-fn get_state_machine_init(
-    path_string: String,
-) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    get_state_machine_generic(path_string, SM_INIT_TAG.into())
+fn get_sm_init(path_string: String) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+    get_sm_generic(path_string, SM_INIT_TAG.into())
 }
 
 #[hdk_extern]
-fn get_state_machine_comp(
-    path_string: String,
-) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
-    get_state_machine_generic(path_string, SM_COMP_TAG.into())
+fn get_sm_comp(path_string: String) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
+    get_sm_generic(path_string, SM_COMP_TAG.into())
 }
 
-fn get_state_machine_generic(
+fn get_sm_generic(
     path_string: String,
     link_tag_string: String,
 ) -> ExternResult<Option<(EntryHash, SensemakerEntry)>> {
@@ -151,13 +157,13 @@ fn get_state_machine_generic(
 
 #[hdk_extern]
 /// set the sm_init state for the path_string to the `rep_lang` interpretation of `expr_str`
-pub fn set_state_machine_init((path_string, expr_str): (String, String)) -> ExternResult<bool> {
+pub fn set_sm_init((path_string, expr_str): (String, String)) -> ExternResult<bool> {
     set_sensemaker_entry(path_string, SM_INIT_TAG.into(), expr_str)
 }
 
 #[hdk_extern]
 /// set the sm_comp state for the path_string to the `rep_lang` interpretation of `expr_str`
-pub fn set_state_machine_comp((path_string, expr_str): (String, String)) -> ExternResult<bool> {
+pub fn set_sm_comp((path_string, expr_str): (String, String)) -> ExternResult<bool> {
     set_sensemaker_entry(path_string, SM_COMP_TAG.into(), expr_str)
 }
 
@@ -178,6 +184,12 @@ fn set_sensemaker_entry(
 #[hdk_extern]
 fn step_sm_remote((path_string, entry_hash, act): (String, EntryHash, String)) -> ExternResult<()> {
     let cell_id = get_sensemaker_cell_id(())?;
-    remote_step_sm(cell_id, None, (path_string, entry_hash, act))?;
-    Ok(())
+    remote_step_sm(cell_id, None, (path_string, entry_hash, act))
+}
+
+// TODO figure out how to automate / streamline all these high-indirection methods
+#[hdk_extern]
+fn step_sm_path_remote(payload: (String, String, String)) -> ExternResult<()> {
+    let cell_id = get_sensemaker_cell_id(())?;
+    remote_step_sm_path(cell_id, None, payload)
 }

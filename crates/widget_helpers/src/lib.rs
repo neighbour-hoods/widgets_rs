@@ -1,6 +1,8 @@
 use wasm_bindgen::prelude::*;
 use weblog::{console_error, console_log};
 
+pub mod file_upload;
+
 pub enum WsMsg<WS, WSCMD, WSCMDRESP> {
     Connected(WS),
     Error(String),

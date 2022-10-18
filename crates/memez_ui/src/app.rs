@@ -5,22 +5,17 @@ use weblog::{console_error, console_log};
 use yew::{html::Scope, prelude::*};
 
 // use social_sensemaker_core::SENSEMAKER_ZOME_NAME;
-// TODO figure out how to depend on `common` without getting:
-// ```
-// ✘ [ERROR] Could not resolve "env"
-// ```
-// use common::vec_u8_b64_encode;
 
 use holochain_client_wrapper::{
-    agent_pk_to_vec_u8, AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd,
-    AppWsCmdResponse, CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw,
-    SerializeToJsObj,
+    AdminWebsocket, AdminWsCmd, AdminWsCmdResponse, AppWebsocket, AppWsCmd, AppWsCmdResponse,
+    CellId, DeserializeFromJsObj, EntryHashRaw, EntryHeaderHashPairRaw, SerializeToJsObj,
 };
-use paperz_core::{types::Paper, AGENT_PATH, PAPERZ_ZOME_NAME};
+use memez_core::{types::Meme, MEMEZ_PATH};
 use widget_helpers::file_upload::{FileBytes, FileUploadApp};
 
 use crate::js_ser_de::*;
 
+const MEMEZ_ZOME_NAME: &str = "memez_main_zome";
 // TODO get rid of this once we're using proper sensemaker app name
 const TEST_APP_NAME: &str = "test-app";
 
@@ -30,11 +25,11 @@ pub enum Msg {
     Log(String),
     Error(String),
     ZomeCallResponse(ZomeCallResponse),
-    BrowserUploadedPaper(Paper),
+    BrowserUploadedMeme(Meme),
     SensemakerPresent(bool),
     SmInitSubmit(String),
     SmCompSubmit(String),
-    SmDataInit,
+    ClapForMeme(EntryHashRaw),
 }
 
 pub enum WsMsg<WSCMD, WSCMDRESP> {
@@ -43,23 +38,25 @@ pub enum WsMsg<WSCMD, WSCMDRESP> {
 }
 
 pub enum ZomeCallResponse {
-    Papers(Vec<(EntryHashRaw, Paper)>),
-    UploadPaper(EntryHashRaw, Paper),
+    Memes(Vec<(EntryHashRaw, Meme, i64)>),
+    UploadMeme(EntryHashRaw, Meme),
 }
 
 pub struct Model {
     admin_ws: AdminWebsocket,
     app_ws: AppWebsocket,
-    paperz_cell_id: CellId,
-    paperz: Vec<(EntryHashRaw, Paper)>,
+    memez_cell_id: CellId,
+    memez: Vec<(EntryHashRaw, Meme, i64)>,
     /// None means we don't know yet (no response). for `Some(b)`, `b == True` indicates presence.
     sensemaker_present: Option<bool>,
     /// (sm_init_expr_string, sm_comp_expr_string)
-    paper_sm: (String, String),
+    meme_sm: (String, String),
+    feed_score_comp: String,
 }
 
 const STARTER_SM_INIT_EXPR_STRING: &str = "0";
 const STARTER_SM_COMP_EXPR_STRING: &str = "+";
+const STARTER_FEED_SCORE_COMP: &str = "+";
 
 #[derive(Properties, PartialEq)]
 pub struct ModelProps {
@@ -75,27 +72,26 @@ impl Component for Model {
     fn create(ctx: &Context<Self>) -> Self {
         let props = ctx.props();
         let cell_id = CellId::deserialize_from_js_obj(props.cell_id_js.clone());
-        let app_ws: AppWebsocket = props.app_ws_js.clone().into();
-
-        // get_all_paperz
-        let app_ws_ = app_ws.clone();
         let cell_id_ = cell_id.clone();
+        let app_ws: AppWebsocket = props.app_ws_js.clone().into();
+        let app_ws_: AppWebsocket = app_ws.clone();
         ctx.link().send_future(async move {
             let cmd = AppWsCmd::CallZome {
                 cell_id: cell_id_.clone(),
-                zome_name: PAPERZ_ZOME_NAME.into(),
-                fn_name: "get_all_paperz".into(),
-                payload: JsValue::NULL,
+                zome_name: MEMEZ_ZOME_NAME.into(),
+                fn_name: "get_all_memez".into(),
+                payload: (STARTER_FEED_SCORE_COMP.to_string(), cell_id_.1.clone())
+                    .serialize_to_js_obj(),
                 provenance: cell_id_.1.clone(),
                 cap: "".into(),
             };
             let resp = app_ws_.call(cmd).await;
             match resp {
                 Ok(AppWsCmdResponse::CallZome(val)) => {
-                    Msg::ZomeCallResponse(ZomeCallResponse::Papers(
-                        PaperEhVec::deserialize_from_js_obj_(val)
+                    Msg::ZomeCallResponse(ZomeCallResponse::Memes(
+                        MemeEhScoreVec::deserialize_from_js_obj_(val)
                             .into_iter()
-                            .map(|pair| pair.into())
+                            .map(|x| x.into())
                             .collect(),
                     ))
                 }
@@ -103,13 +99,6 @@ impl Component for Model {
                 Err(err) => Msg::Error(format!("err: {:?}", err)),
             }
         });
-
-        // state machine setup
-        let paper_sm: (String, String) = (
-            STARTER_SM_INIT_EXPR_STRING.into(),
-            STARTER_SM_COMP_EXPR_STRING.into(),
-        );
-
         let admin_ws: AdminWebsocket = props.admin_ws_js.clone().into();
         let admin_ws_ = admin_ws.clone();
         ctx.link().send_future(async move {
@@ -123,13 +112,21 @@ impl Component for Model {
                 Err(err) => Msg::Error(format!("err: {:?}", err)),
             }
         });
+
+        // state machine setup
+        let meme_sm: (String, String) = (
+            STARTER_SM_INIT_EXPR_STRING.into(),
+            STARTER_SM_COMP_EXPR_STRING.into(),
+        );
+
         Self {
             admin_ws,
             app_ws,
-            paperz_cell_id: cell_id.clone(),
-            paperz: Vec::new(),
+            memez_cell_id: cell_id.clone(),
+            memez: Vec::new(),
             sensemaker_present: None,
-            paper_sm,
+            meme_sm,
+            feed_score_comp: "+".into(),
         }
     }
 
@@ -189,35 +186,35 @@ impl Component for Model {
                 false
             }
 
-            Msg::ZomeCallResponse(ZomeCallResponse::Papers(paper_vec)) => {
-                self.paperz = paper_vec;
-                console_log!("got paper_vec");
+            Msg::ZomeCallResponse(ZomeCallResponse::Memes(meme_vec)) => {
+                self.memez = meme_vec;
+                console_log!("got meme_vec");
                 true
             }
 
-            Msg::ZomeCallResponse(ZomeCallResponse::UploadPaper(paper_eh, paper)) => {
-                self.paperz.push((paper_eh, paper));
+            Msg::ZomeCallResponse(ZomeCallResponse::UploadMeme(meme_eh, meme)) => {
+                self.memez.push((meme_eh, meme, 0));
                 true
             }
 
-            Msg::BrowserUploadedPaper(paper) => {
+            Msg::BrowserUploadedMeme(meme) => {
                 let ws = self.app_ws.clone();
-                let cell_id = self.paperz_cell_id.clone();
+                let cell_id = self.memez_cell_id.clone();
                 ctx.link().send_future(async move {
                     let cmd = AppWsCmd::CallZome {
                         cell_id: cell_id.clone(),
-                        zome_name: PAPERZ_ZOME_NAME.into(),
-                        fn_name: "upload_paper".into(),
-                        payload: Pair(paper.clone(), cell_id.1.clone()).serialize_to_js_obj_(),
+                        zome_name: MEMEZ_ZOME_NAME.into(),
+                        fn_name: "upload_meme".into(),
+                        payload: meme.clone().serialize_to_js_obj_(),
                         provenance: cell_id.1.clone(),
                         cap: "".into(),
                     };
                     let resp = ws.call(cmd).await;
                     match resp {
                         Ok(AppWsCmdResponse::CallZome(val)) => {
-                            let (paper_eh, _paper_hh) =
+                            let (meme_eh, _meme_hh) =
                                 EntryHeaderHashPairRaw::deserialize_from_js_obj_(val);
-                            Msg::ZomeCallResponse(ZomeCallResponse::UploadPaper(paper_eh, paper))
+                            Msg::ZomeCallResponse(ZomeCallResponse::UploadMeme(meme_eh, meme))
                         }
                         Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
                         Err(err) => Msg::Error(format!("err: {:?}", err)),
@@ -234,43 +231,45 @@ impl Component for Model {
             Msg::SmInitSubmit(expr_str) => {
                 self.set_sm(ctx.link(), expr_str.clone(), "set_sm_init".into());
                 // TODO ideally we would wait for confirmation before setting this
-                self.paper_sm.0 = expr_str;
+                self.meme_sm.0 = expr_str;
                 true
             }
 
             Msg::SmCompSubmit(expr_str) => {
                 self.set_sm(ctx.link(), expr_str.clone(), "set_sm_comp".into());
                 // TODO ideally we would wait for confirmation before setting this
-                self.paper_sm.1 = expr_str;
+                self.meme_sm.1 = expr_str;
                 true
             }
 
-            Msg::SmDataInit => {
+            Msg::ClapForMeme(meme_eh) => {
                 let app_ws_ = self.app_ws.clone();
-                let cell_id_ = self.paperz_cell_id.clone();
-                let agent_b64: String =
-                    base64::encode(agent_pk_to_vec_u8(self.paperz_cell_id.1.clone()));
-                console_log!("agent_b64: ", agent_b64.clone());
-                let payload: (String, String) = (AGENT_PATH.into(), agent_b64);
+                let cell_id_ = self.memez_cell_id.clone();
+                let meme_eh_ = meme_eh.clone();
                 ctx.link().send_future(async move {
                     let cmd = AppWsCmd::CallZome {
                         cell_id: cell_id_.clone(),
-                        zome_name: PAPERZ_ZOME_NAME.into(),
-                        fn_name: "init_agent_sm_data".into(),
-                        payload: payload.serialize_to_js_obj(),
+                        zome_name: MEMEZ_ZOME_NAME.into(),
+                        fn_name: "clap_for_meme".into(),
+                        payload: meme_eh_.serialize_to_js_obj(),
                         provenance: cell_id_.1.clone(),
                         cap: "".into(),
                     };
                     let resp = app_ws_.call(cmd).await;
                     match resp {
                         Ok(AppWsCmdResponse::CallZome(val)) => {
-                            Msg::Log(format!("init_agent_sm_data: {:?}", val))
+                            Msg::Log(format!("clap_for_meme: {:?}", val))
                         }
                         Ok(resp) => Msg::Error(format!("impossible: invalid response: {:?}", resp)),
                         Err(err) => Msg::Error(format!("err: {:?}", err)),
                     }
                 });
-                false
+                for triple in self.memez.iter_mut() {
+                    if triple.0 == meme_eh {
+                        triple.2 += 1;
+                    }
+                }
+                true
             }
         }
     }
@@ -284,7 +283,7 @@ impl Component for Model {
             Some(false) => html! {
                 <div class="alert">
                   <h3>{"social_sensemaker is absent!"}</h3>
-                  <p>{"please install it into your `we`, as `paperz` requires it to function."}</p>
+                  <p>{"please install it into your `we`, as `memez` requires it to function."}</p>
                 </div>
             },
         };
@@ -292,43 +291,47 @@ impl Component for Model {
         let sm_init_handler = |input: String| Ok(Msg::SmInitSubmit(input));
         let sm_comp_handler = |input: String| Ok(Msg::SmCompSubmit(input));
         //
-        let content_name = "paper";
+        let content_name = "meme";
         let on_file_upload: Callback<FileBytes> = {
             let link = ctx.link().clone();
             Callback::from(move |fb: FileBytes| {
-                let paper = Paper {
+                let meme = Meme {
                     filename: fb.filename,
                     blob_str: encode(fb.bytes),
                 };
-                link.send_future(async { Msg::BrowserUploadedPaper(paper) })
+                link.send_future(async { Msg::BrowserUploadedMeme(meme) })
             })
         };
-        let mk_paper_src = |paper: Paper| -> String {
-            "data:application/pdf;base64,".to_string() + &paper.blob_str
-        };
+        let mk_meme_src =
+            |meme: Meme| -> String { "data:img;base64,".to_string() + &meme.blob_str };
 
         html! {
             <div>
-                <p>{"hello, paperz 👋"}</p>
+                <p>{"hello, memez 👋"}</p>
                 <br/>
                 {sensemaker_present_html}
                 <br/>
-                { self.view_string_input(ctx.link(), sm_init_handler, "sm_init".into(), "paperz/agent sm_init".into(), self.paper_sm.0.clone()) }
+                { self.view_string_input(ctx.link(), sm_init_handler, "sm_init".into(), "meme sm_init".into(), self.meme_sm.0.clone()) }
                 <br/>
-                { self.view_string_input(ctx.link(), sm_comp_handler, "sm_comp".into(), "paperz/agent sm_comp".into(), self.paper_sm.1.clone()) }
-                <br/>
-                <button onclick={ctx.link().callback(move |_| Msg::SmDataInit)}>{ "initialize_sm_data" }</button>
+                { self.view_string_input(ctx.link(), sm_comp_handler, "sm_comp".into(), "meme sm_comp".into(), self.meme_sm.1.clone()) }
                 <br/>
                 <FileUploadApp {content_name} {on_file_upload} />
                 <br/>
-                <h3 class="subtitle">{"paperz"}</h3>
-                { for self.paperz.iter().map(|pair| html!{ <iframe src={mk_paper_src(pair.1.clone())} width="100%" height="500px" /> }) }
+                <h3 class="subtitle">{"memez"}</h3>
+                { for self.memez.iter().cloned().map(|triple| html!{
+                    <div>
+                        <img src={mk_meme_src(triple.1.clone())} width="95%" height="500px" />
+                        <p>{ format!("score: {}", triple.2) }</p>
+                        <button onclick={ctx.link().callback(move |_| Msg::ClapForMeme(triple.0.clone()))}>{ "👏" }</button>
+                    </div>
+                }) }
             </div>
         }
     }
 }
 
 impl Model {
+    // TODO dedup
     fn view_string_input<F>(
         &self,
         link: &Scope<Self>,
@@ -371,13 +374,13 @@ impl Model {
 
     fn set_sm(&self, link: &Scope<Self>, expr_str: String, zome_fn: String) {
         let app_ws_ = self.app_ws.clone();
-        let cell_id_ = self.paperz_cell_id.clone();
+        let cell_id_ = self.memez_cell_id.clone();
         link.send_future(async move {
             let cmd = AppWsCmd::CallZome {
                 cell_id: cell_id_.clone(),
-                zome_name: PAPERZ_ZOME_NAME.into(),
+                zome_name: MEMEZ_ZOME_NAME.into(),
                 fn_name: zome_fn.clone(),
-                payload: (AGENT_PATH.to_string(), expr_str).serialize_to_js_obj(),
+                payload: (MEMEZ_PATH.to_string(), expr_str).serialize_to_js_obj(),
                 provenance: cell_id_.1.clone(),
                 cap: "".into(),
             };

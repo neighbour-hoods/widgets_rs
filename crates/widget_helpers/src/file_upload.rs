@@ -1,7 +1,6 @@
 /// this was borrowed from
 /// https://github.com/yewstack/yew/tree/8172b9ceacdcd7d4609e8ba00f758507a8bbc85d/examples/file_upload
 /// and modified.
-use base64::encode;
 use gloo::file::callbacks::FileReader;
 use gloo::file::File;
 use std::collections::HashMap;
@@ -10,11 +9,14 @@ use weblog::console_error;
 use yew::html::TargetCast;
 use yew::{html, Callback, Component, Context, Html, Properties};
 
-use paperz_core::types::Paper;
-
 pub enum Msg {
-    Loaded(Paper),
+    Loaded(FileBytes),
     Files(Vec<File>),
+}
+
+pub struct FileBytes {
+    pub filename: String,
+    pub bytes: Vec<u8>,
 }
 
 pub struct FileUploadApp {
@@ -23,7 +25,8 @@ pub struct FileUploadApp {
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub on_paper_upload: Callback<Paper>,
+    pub content_name: String,
+    pub on_file_upload: Callback<FileBytes>,
 }
 
 impl Component for FileUploadApp {
@@ -38,9 +41,9 @@ impl Component for FileUploadApp {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Loaded(paper) => {
-                self.readers.remove(&paper.filename);
-                ctx.props().on_paper_upload.emit(paper);
+            Msg::Loaded(fb) => {
+                self.readers.remove(&fb.filename);
+                ctx.props().on_file_upload.emit(fb);
                 false
             }
             Msg::Files(files) => {
@@ -54,10 +57,9 @@ impl Component for FileUploadApp {
                             Err(err) => {
                                 console_error!(format!("gloo file read_as_bytes error: {}", err));
                             }
-                            Ok(bytes) => link.send_message(Msg::Loaded(Paper {
-                                filename: filename.clone(),
-                                blob_str: encode(bytes),
-                            })),
+                            Ok(bytes) => {
+                                link.send_message(Msg::Loaded(FileBytes { filename, bytes }))
+                            }
                         })
                     };
                     self.readers.insert(filename, task);
@@ -71,7 +73,7 @@ impl Component for FileUploadApp {
         html! {
             <div>
                 <div>
-                    <h3 class="subtitle">{"upload paper"}</h3>
+                    <h3 class="subtitle">{format!("upload {}", ctx.props().content_name)}</h3>
                     <input type="file" multiple=true onchange={ctx.link().callback(move |e: Event| {
                             let mut result = Vec::new();
                             let input: HtmlInputElement = e.target_unchecked_into();

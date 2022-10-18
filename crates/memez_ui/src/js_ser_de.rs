@@ -2,7 +2,7 @@ use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::{prelude::*, JsCast};
 
 use holochain_client_wrapper::{DeserializeFromJsObj, EntryHashRaw, SerializeToJsObj};
-use paperz_core::types::Paper;
+use memez_core::types::Meme;
 
 pub struct Pair<A, B>(pub A, pub B);
 
@@ -13,7 +13,16 @@ impl<A, B> Into<(A, B)> for Pair<A, B> {
     }
 }
 
-pub type PaperEhVec = Vec<Pair<EntryHashRaw, Paper>>;
+pub struct Triple<A, B, C>(pub A, pub B, pub C);
+
+impl<A, B, C> Into<(A, B, C)> for Triple<A, B, C> {
+    fn into(self) -> (A, B, C) {
+        let Triple(a, b, c) = self;
+        (a, b, c)
+    }
+}
+
+pub type MemeEhScoreVec = Vec<Triple<EntryHashRaw, Meme, i64>>;
 
 pub trait SerializeToJsObj_ {
     fn serialize_to_js_obj_(self) -> JsValue;
@@ -23,7 +32,7 @@ pub trait DeserializeFromJsObj_ {
     fn deserialize_from_js_obj_(_: JsValue) -> Self;
 }
 
-impl SerializeToJsObj_ for Paper {
+impl SerializeToJsObj_ for Meme {
     fn serialize_to_js_obj_(self) -> JsValue {
         let ret = move || -> Result<JsValue, JsValue> {
             let val: JsValue = Object::new().dyn_into()?;
@@ -78,6 +87,22 @@ impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj_> DeserializeFromJsObj_ fo
     }
 }
 
+impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj_, C: DeserializeFromJsObj>
+    DeserializeFromJsObj_ for Triple<A, B, C>
+{
+    fn deserialize_from_js_obj_(v: JsValue) -> Self {
+        let arr: Array = v.dyn_into().expect("Array conversion to succeed");
+        let a = arr.at(0);
+        let b = arr.at(1);
+        let c = arr.at(2);
+        Triple(
+            A::deserialize_from_js_obj(a),
+            B::deserialize_from_js_obj_(b),
+            C::deserialize_from_js_obj(c),
+        )
+    }
+}
+
 impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj> DeserializeFromJsObj_ for (A, B) {
     fn deserialize_from_js_obj_(v: JsValue) -> Self {
         let arr: Array = v.dyn_into().expect("Array conversion to succeed");
@@ -87,7 +112,7 @@ impl<A: DeserializeFromJsObj, B: DeserializeFromJsObj> DeserializeFromJsObj_ for
     }
 }
 
-impl DeserializeFromJsObj_ for Paper {
+impl DeserializeFromJsObj_ for Meme {
     fn deserialize_from_js_obj_(v: JsValue) -> Self {
         let filename = String::deserialize_from_js_obj(
             Reflect::get(&v, &JsValue::from_str("filename")).expect("object field get to succeed"),
