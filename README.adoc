@@ -10,7 +10,7 @@ this repo is abandoned. as of 2022-10-26 I am leaving Neighbourhoods, and the re
 
 Holochain, additionally, does not make it easy to write Rust frontends, even though in theory they could make it quite easy, and aim for type coherence across backend+frontend, because the entirety of Holochain's backend is written in Rust.
 
-because then only official frontend client for Holochain is written in Javascript, all of the types which are defined in the backend, in Rust, are not available for frontend clients.
+because the only official frontend client for Holochain is written in Javascript, all of the types which are defined in the backend, in Rust, are not available for frontend clients.
 
 imo this is bad, especially when one considers that if the official frontend client were written in Rust, it would get type coherence "for free" and a Javascript wrapper could be exposed via https://rustwasm.github.io/wasm-bindgen/[wasm-bindgen]. additionally, the (inevitable and unavoidable) problems of synchronizing two halves of a codebase which are written in 2 different languages which cannot "talk to" each other could be avoided.
 
