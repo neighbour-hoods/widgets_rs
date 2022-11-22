@@ -4,23 +4,9 @@
 
 this is an experimental repo which uses Rust to build UIs for Holochain, and features a `wasm-bindgen` FFI binding library to the https://github.com/holochain/holochain-client-js[holochain-client-js] library.
 
-== 🛑 note about abandonment 🛑
+== 🛑 note 🛑
 
-this repo is abandoned. as of 2022-10-26 I am leaving Neighbourhoods, and the remaining team has no plans (and insufficient Rust skill) to move this effort forwards.
-
-Holochain, additionally, does not make it easy to write Rust frontends, even though in theory they could make it quite easy, and aim for type coherence across backend+frontend, because the entirety of Holochain's backend is written in Rust.
-
-because the only official frontend client for Holochain is written in Javascript, all of the types which are defined in the backend, in Rust, are not available for frontend clients.
-
-imo this is bad, especially when one considers that if the official frontend client were written in Rust, it would get type coherence "for free" and a Javascript wrapper could be exposed via https://rustwasm.github.io/wasm-bindgen/[wasm-bindgen]. additionally, the (inevitable and unavoidable) problems of synchronizing two halves of a codebase which are written in 2 different languages which cannot "talk to" each other could be avoided.
-
-this means that all changes to Holochain's backend going forwards (which at their current rate of change might be quite a lot) could silently break the frontend client, and manual programmer-eyes will have to go scan over it to check for consistency.
-
-if a Rust client were used, and proper CI discipline put in place, those checks would be caught statically, or would perhaps "automatically work" if the API types were changed in a way that still de/serialized properly.
-
-I believe it is the correct decision for Neighbourhoods to abandon this & the https://github.com/mhuesch/holochain_client_wrapper[holochain_client_wrapper] effort. because it is swimming upstream against the current of Holochain, which wants to take the "path of short-term least resistance" and use Javascript as default. I (@mhuesch) put a lot of work into this Rust effort, and am bummed out to see it die, but believe that Holochain is too shaky of a foundation to build anything real on at this stage.
-
-that is why I am taking my energies to https://urbit.org/[Urbit].
+this repo is abandoned, as of 2022-10-26, due to the team's decision to build initial versions of neighbourhoods applets and sensemaker-lite with Javascript frontends. 
 
 == initial repo setup
 
